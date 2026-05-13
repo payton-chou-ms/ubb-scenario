@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GitHub Copilot Usage-Based Billing — 情境分析與管理要點</title>
+<title>GitHub Copilot Usage-Based Billing — Scenario Analysis &amp; Management Guide</title>
 <style>
 /* ═══════════════════════════════════════════
    Fluent UI Design Tokens
@@ -34,7 +34,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; scroll-padding-top: 72px; }
 body {
-  font-family: 'Segoe UI Variable', 'Segoe UI', 'Microsoft JhengHei', -apple-system, system-ui, sans-serif;
+  font-family: 'Segoe UI Variable', 'Segoe UI', -apple-system, system-ui, sans-serif;
   font-size: 14px; line-height: 1.6; color: var(--neutral-95);
   background: var(--neutral-4);
 }
@@ -329,164 +329,164 @@ body {
   <svg viewBox="0 0 16 16"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>
   <div class="sep"></div>
   <span class="title">Copilot Usage-Based Billing</span>
-  <span class="badge">2026/6/1 新制</span>
-  <a href="copilot-ulb-billing-scenarios-en.html" style="margin-left:12px; display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:8px; background:rgba(255,255,255,0.12); color:rgba(255,255,255,0.9); font-size:12px; font-weight:600; text-decoration:none; border:1px solid rgba(255,255,255,0.2); transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.22)'" onmouseout="this.style.background='rgba(255,255,255,0.12)'">🌐 EN</a>
+  <span class="badge">New: June 1, 2026</span>
+  <a href="copilot-ulb-billing-scenarios.html" style="margin-left:12px; display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:8px; background:rgba(255,255,255,0.12); color:rgba(255,255,255,0.9); font-size:12px; font-weight:600; text-decoration:none; border:1px solid rgba(255,255,255,0.2); transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.22)'" onmouseout="this.style.background='rgba(255,255,255,0.12)'">🌐 中文</a>
 </div>
 
 <!-- ═══ Hero ═══ -->
 <div class="hero">
   <div class="hero-inner">
     <div class="tag">Copilot Business</div>
-    <h1>Usage-Based Billing<br>情境分析與管理要點</h1>
-    <p class="subtitle">以 10 位使用者、促銷期為例，解析 ULB / Org Budget / Enterprise Budget 的交互行為，並提供互動式成本模擬器。</p>
+    <h1>Usage-Based Billing<br>Scenario Analysis &amp; Management Guide</h1>
+    <p class="subtitle">Using 10 users during the promotional period as an example, this guide breaks down how ULB, Org Budget, and Enterprise Budget interact — with an interactive cost simulator.</p>
   </div>
 </div>
 
 <div class="container">
 
-<!-- ═══ 前提假設 ═══ -->
+<!-- ═══ Assumptions ═══ -->
 <div class="section-header" id="assumptions">
   <div class="section-icon blue"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4 0a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V2a2 2 0 00-2-2H4zm1 3h6v1H5V3zm0 3h6v1H5V6zm0 3h4v1H5V9z"/></svg></div>
-  <h2>前提假設</h2>
+  <h2>Baseline Assumptions</h2>
 </div>
 <div class="info-grid">
   <div class="card info-card">
-    <div class="label">方案</div>
+    <div class="label">Plan</div>
     <div class="value">Copilot Business</div>
-    <div class="note">Seat 月費 $19/user/month</div>
+    <div class="note">Seat fee: $19/user/month</div>
   </div>
   <div class="card info-card">
-    <div class="label">範例人數</div>
-    <div class="value"><span class="highlight">10</span> 位使用者</div>
+    <div class="label">Example Team Size</div>
+    <div class="value"><span class="highlight">10</span> users</div>
   </div>
   <div class="card info-card">
-    <div class="label">Included AI Credits（促銷期 6/1–9/1）</div>
+    <div class="label">Included AI Credits (Promo: Jun 1 – Sep 1)</div>
     <div class="value"><span class="highlight">3,000</span> /user/month = $30/user</div>
-    <div class="note">標準期：1,900/user = $19/user</div>
+    <div class="note">Standard period: 1,900/user = $19/user</div>
   </div>
   <div class="card info-card">
-    <div class="label">Pool 總量（促銷期）</div>
+    <div class="label">Shared Pool Total (Promo Period)</div>
     <div class="value"><span class="highlight">30,000</span> credits = $300</div>
     <div class="note">1 AI Credit = $0.01 USD</div>
   </div>
 </div>
 <div class="callout info" style="margin-top:8px;">
   <span class="callout-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a4.5 4.5 0 00-1.5 8.74V12.5a1.5 1.5 0 001.5 1.5h0a1.5 1.5 0 001.5-1.5V9.74A4.5 4.5 0 008 1zM6.5 15h3v1h-3v-1z"/></svg></span>
-  <span><strong>Code completions</strong> 與 <strong>next edit suggestions</strong> 不計入 AI Credits，維持無限制使用。</span>
+  <span><strong>Code completions</strong> and <strong>next edit suggestions</strong> do not count against AI Credits and remain unlimited.</span>
 </div>
 
-<!-- ═══ 關鍵概念 ═══ -->
+<!-- ═══ Key Concepts ═══ -->
 <div class="section-header" id="concepts">
   <div class="section-icon purple"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11.5 0a4.5 4.5 0 00-3.55 7.27L1 14.22V16h1.78l6.95-6.95A4.5 4.5 0 1011.5 0zm0 7a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg></div>
-  <h2>關鍵概念</h2>
+  <h2>Key Concepts</h2>
 </div>
 <div class="concept-grid">
   <div class="card concept-chip">
     <div class="chip-title">AI Credits</div>
-    <div class="chip-desc">計費單位<br>1 credit = $0.01 USD</div>
+    <div class="chip-desc">Billing unit<br>1 credit = $0.01 USD</div>
   </div>
   <div class="card concept-chip">
-    <div class="chip-title">Pool（池）</div>
-    <div class="chip-desc">所有 seat 的 included credits 合併為共享池，非個人 bucket。新增 license 立即增加；移除於下帳期縮減</div>
+    <div class="chip-title">Pool (Shared Pool)</div>
+    <div class="chip-desc">All seat included credits merge into one shared pool — not individual buckets. Adding a license grows the pool immediately; removing one shrinks it on the next billing cycle.</div>
   </div>
   <div class="card concept-chip">
     <div class="chip-title">ULB</div>
-    <div class="chip-desc">User-Level Budget — 追蹤每人<strong>總消耗</strong>（pool + overage），到限即停。$0 = 完全無法使用</div>
+    <div class="chip-desc">User-Level Budget — tracks each user's <strong>total spend</strong> (pool + overage). Stops usage when reached. $0 = user cannot use Copilot at all.</div>
   </div>
   <div class="card concept-chip">
     <div class="chip-title">Org Budget</div>
-    <div class="chip-desc">控制 org 層級的 additional usage（超額）花費上限</div>
+    <div class="chip-desc">Sets the maximum additional usage (overage) spend allowed at the organization level.</div>
   </div>
   <div class="card concept-chip">
     <div class="chip-title">Enterprise Budget</div>
-    <div class="chip-desc">控制整個 enterprise 超額花費上限，跨所有 org 的全局剎車</div>
+    <div class="chip-desc">Controls the overage spending cap across the entire enterprise — a global kill switch across all orgs.</div>
   </div>
   <div class="card concept-chip">
-    <div class="chip-title">Stop usage 勾選</div>
-    <div class="chip-desc">Budget 上的「Stop usage when budget limit is reached」— 勾選才是 hard stop，未勾選只發 alert。Budget = $0 + 勾選 = 不允許超額</div>
+    <div class="chip-title">"Stop usage" Checkbox</div>
+    <div class="chip-desc">"Stop usage when budget limit is reached" on the Budget page. Must be checked for a hard stop; unchecked means alert-only. Budget = $0 + checked = no overage allowed.</div>
   </div>
 </div>
 
-<!-- ═══ 總結表 ═══ -->
+<!-- ═══ Summary Table ═══ -->
 <div class="section-header" id="summary">
   <div class="section-icon green"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M1 14h2V6H1v8zm4 0h2V2H5v12zm4 0h2V8H9v6zm4 0h2V4h-2v10z"/></svg></div>
-  <h2>總結表 — 點擊列查看詳情</h2>
+  <h2>Summary Table — Click a Row to See Details</h2>
 </div>
 <div class="summary-wrap">
   <table class="summary-table" id="summaryTable">
     <thead>
-      <tr><th>情境</th><th>ULB</th><th>Pool 共享</th><th>允許超額</th><th>最大額外費用</th><th>風險</th></tr>
+      <tr><th>Scenario</th><th>ULB</th><th>Pool Sharing</th><th>Overage Allowed</th><th>Max Extra Cost</th><th>Risk</th></tr>
     </thead>
     <tbody>
       <tr data-tab="0" onclick="activateTab(0)">
-        <td>1 未設 ULB</td><td>無上限</td>
+        <td>1 No ULB set</td><td>Unlimited</td>
         <td class="badge-yes">Yes</td><td class="badge-yes">Yes</td>
-        <td>依 budget</td><td><span class="risk-tag risk-high">一人吃光 pool</span></td>
+        <td>Per budget</td><td><span class="risk-tag risk-high">One user drains pool</span></td>
       </tr>
       <tr data-tab="1" onclick="activateTab(1)">
         <td>2 ULB = included</td><td>$30</td>
         <td class="badge-no">No</td><td class="badge-no">No</td>
-        <td>$0</td><td><span class="risk-tag risk-med">無 pooling 優勢</span></td>
+        <td>$0</td><td><span class="risk-tag risk-med">No pooling benefit</span></td>
       </tr>
       <tr data-tab="2" onclick="activateTab(2)">
         <td>3 ULB &gt; included</td><td>$40</td>
         <td class="badge-yes">Yes</td><td class="badge-no">No</td>
-        <td>$0</td><td><span class="risk-tag risk-med">排擠他人</span></td>
+        <td>$0</td><td><span class="risk-tag risk-med">Starves others</span></td>
       </tr>
       <tr data-tab="3" onclick="activateTab(3)">
         <td>4 ULB + overage</td><td>$40</td>
         <td class="badge-yes">Yes</td><td class="badge-yes">Yes (org)</td>
-        <td>$100</td><td><span class="risk-tag risk-low">可控</span></td>
+        <td>$100</td><td><span class="risk-tag risk-low">Controlled</span></td>
       </tr>
       <tr data-tab="4" onclick="activateTab(4)">
-        <td>5 Enterprise</td><td>$40</td>
+        <td>5 Enterprise multi-org</td><td>$40</td>
         <td class="badge-yes">Yes</td><td class="badge-yes">Yes (org+ent)</td>
-        <td>$800</td><td><span class="risk-tag risk-high">全局剎車</span></td>
+        <td>$800</td><td><span class="risk-tag risk-high">Global kill switch</span></td>
       </tr>
       <tr data-tab="5" onclick="activateTab(5)">
-        <td>6 差異化 ULB</td><td>Mixed</td>
-        <td class="badge-yes">Yes</td><td class="badge-yes">Yes ($0)</td>
-        <td>$0</td><td><span class="risk-tag risk-med">管理複雜</span></td>
+        <td>6 Tiered ULB by role</td><td>Mixed</td>
+        <td class="badge-yes">Yes</td><td class="badge-no">No ($0)</td>
+        <td>$0</td><td><span class="risk-tag risk-med">Complex to manage</span></td>
       </tr>
     </tbody>
   </table>
 </div>
 
-<!-- ═══ 情境分析 ═══ -->
+<!-- ═══ Scenario Analysis ═══ -->
 <div class="section-header" id="scenarios">
   <div class="section-icon blue"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11.5 7a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zm-.82 4.74a6.5 6.5 0 111.06-1.06l4.02 4.02-1.06 1.06-4.02-4.02z"/></svg></div>
-  <h2>情境分析</h2>
+  <h2>Scenario Analysis</h2>
 </div>
 <div class="scenario-tabs" id="scenarioTabs">
-  <button class="tab-btn active" onclick="activateTab(0)">情境 1</button>
-  <button class="tab-btn" onclick="activateTab(1)">情境 2</button>
-  <button class="tab-btn" onclick="activateTab(2)">情境 3</button>
-  <button class="tab-btn" onclick="activateTab(3)">情境 4</button>
-  <button class="tab-btn" onclick="activateTab(4)">情境 5</button>
-  <button class="tab-btn" onclick="activateTab(5)">情境 6</button>
+  <button class="tab-btn active" onclick="activateTab(0)">Scenario 1</button>
+  <button class="tab-btn" onclick="activateTab(1)">Scenario 2</button>
+  <button class="tab-btn" onclick="activateTab(2)">Scenario 3</button>
+  <button class="tab-btn" onclick="activateTab(3)">Scenario 4</button>
+  <button class="tab-btn" onclick="activateTab(4)">Scenario 5</button>
+  <button class="tab-btn" onclick="activateTab(5)">Scenario 6</button>
 </div>
 
 <!-- Panel 1 -->
 <div class="scenario-panel active" data-panel="0">
   <div class="card scenario-detail">
-    <h3 style="margin-bottom:6px; color:var(--brand-70);">情境 1：未設定 ULB（預設值）</h3>
-    <p style="font-size:13px; color:var(--neutral-60); margin-bottom:16px;">沒有 per-user 上限 — 全靠 Pool 與 Org Budget 兑底控制</p>
+    <h3 style="margin-bottom:6px; color:var(--brand-70);">Scenario 1: No ULB Set (Default)</h3>
+    <p style="font-size:13px; color:var(--neutral-60); margin-bottom:16px;">No per-user cap — Pool and Org Budget are the only guardrails.</p>
     <div class="setting-grid">
-      <div class="setting-item"><div class="s-label">ULB</div><div class="s-value">未設定</div><div class="s-sub">無個人上限</div></div>
-      <div class="setting-item"><div class="s-label">Credits/人</div><div class="s-value">無上限</div><div class="s-sub">受 Pool 限制</div></div>
-      <div class="setting-item"><div class="s-label">Org Budget</div><div class="s-value">$100</div><div class="s-sub">超額天花板</div></div>
-      <div class="setting-item"><div class="s-label">最大總容量</div><div class="s-value">40,000</div><div class="s-sub">30,000 + $100 overage</div></div>
+      <div class="setting-item"><div class="s-label">ULB</div><div class="s-value">Not set</div><div class="s-sub">No personal cap</div></div>
+      <div class="setting-item"><div class="s-label">Credits/User</div><div class="s-value">Unlimited</div><div class="s-sub">Bounded by Pool</div></div>
+      <div class="setting-item"><div class="s-label">Org Budget</div><div class="s-value">$100</div><div class="s-sub">Overage ceiling</div></div>
+      <div class="setting-item"><div class="s-label">Max Total Capacity</div><div class="s-value">40,000</div><div class="s-sub">30,000 + $100 overage</div></div>
     </div>
     <ul class="behavior-list">
-      <li>任一使用者可消耗大量 Pool，無個人上限</li>
-      <li>一個 power user 使用 agent mode 跑整天，可能吃掉大部分 Pool</li>
-      <li>Pool 耗盡後，依 Org Budget 允許最多 $100 overage</li>
-      <li><strong>關鍵風險：</strong>缺乏個人消耗控制，難以預測個別使用者行為</li>
-      <li><strong>月費試算：</strong>$190 (seats) + 最多 $100 (overage) = <strong>$290</strong></li>
+      <li>Any user can consume large amounts of the Pool — no individual cap.</li>
+      <li>A single power user running agent mode all day could exhaust most of the Pool.</li>
+      <li>After the Pool is depleted, Org Budget allows up to $100 in additional usage.</li>
+      <li><strong>Key risk:</strong> No per-user consumption control makes individual behavior unpredictable.</li>
+      <li><strong>Monthly estimate:</strong> $190 (seats) + up to $100 (overage) = <strong>$290</strong></li>
     </ul>
     <div class="callout risk">
       <span class="callout-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="var(--red-primary)"><path d="M8 1L0 15h16L8 1zm0 3.5l5.25 9.5H2.75L8 4.5zM7 7v4h2V7H7zm0 5v2h2v-2H7z"/></svg></span>
-      <span><strong>適用場景：</strong>小團隊、高信任度環境。不建議用於大型組織。</span>
+      <span><strong>Best for:</strong> Small, high-trust teams. Not recommended for large organizations.</span>
     </div>
   </div>
 </div>
@@ -494,24 +494,24 @@ body {
 <!-- Panel 2 -->
 <div class="scenario-panel" data-panel="1">
   <div class="card scenario-detail">
-    <h3 style="margin-bottom:6px; color:var(--brand-70);">情境 2：ULB = $30, Org Budget = $0</h3>
-    <p style="font-size:13px; color:var(--neutral-60); margin-bottom:16px;">ULB 等於 Included — 完全不可用到別人的 Pool</p>
+    <h3 style="margin-bottom:6px; color:var(--brand-70);">Scenario 2: ULB = $30, Org Budget = $0</h3>
+    <p style="font-size:13px; color:var(--neutral-60); margin-bottom:16px;">ULB equals included credits — no user can draw from another's allocation.</p>
     <div class="setting-grid">
       <div class="setting-item"><div class="s-label">ULB</div><div class="s-value">$30</div><div class="s-sub">= Included</div></div>
-      <div class="setting-item"><div class="s-label">Credits/人</div><div class="s-value">3,000</div><div class="s-sub">等同個人 bucket</div></div>
-      <div class="setting-item"><div class="s-label">Org Budget</div><div class="s-value">$0</div><div class="s-sub">禁止超額</div></div>
-      <div class="setting-item"><div class="s-label">最大總容量</div><div class="s-value">30,000</div><div class="s-sub">10 × 3,000，無 overage</div></div>
+      <div class="setting-item"><div class="s-label">Credits/User</div><div class="s-value">3,000</div><div class="s-sub">Effectively individual bucket</div></div>
+      <div class="setting-item"><div class="s-label">Org Budget</div><div class="s-value">$0</div><div class="s-sub">No overage</div></div>
+      <div class="setting-item"><div class="s-label">Max Total Capacity</div><div class="s-value">30,000</div><div class="s-sub">10 × 3,000, no overage</div></div>
     </div>
     <ul class="behavior-list">
-      <li>每位使用者從 Pool 取用，上限 3,000 credits</li>
-      <li>即使 User A 只用 1,000，User B <strong>仍被 ULB 卡在 3,000</strong>，無法取用多餘的</li>
-      <li><strong>Pooling 效果被消除</strong>：等於每人独立 bucket，浪費共享潛力</li>
-      <li>Pool 可能有剩餘但無人能取用</li>
-      <li><strong>月費試算：</strong>$190 (seats) + $0 (overage) = <strong>$190</strong></li>
+      <li>Each user draws from the Pool up to 3,000 credits.</li>
+      <li>Even if User A only uses 1,000, User B is <strong>still capped at 3,000</strong> by ULB and cannot access the surplus.</li>
+      <li><strong>Pooling benefit is eliminated</strong> — effectively individual buckets, wasting shared potential.</li>
+      <li>The Pool may have leftover credits that nobody can access.</li>
+      <li><strong>Monthly estimate:</strong> $190 (seats) + $0 (overage) = <strong>$190</strong></li>
     </ul>
     <div class="callout warn">
       <span class="callout-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="var(--yellow-primary)"><path d="M8 1L0 15h16L8 1zm0 3.5l5.25 9.5H2.75L8 4.5zM7 7v4h2V7H7zm0 5v2h2v-2H7z"/></svg></span>
-      <span><strong>適用場景：</strong>需嚴格控制成本不超額、使用量平均的組織。不建議使用量差異大的團隊。</span>
+      <span><strong>Best for:</strong> Organizations that need strict cost control with uniform usage. Not recommended for teams with varied usage patterns.</span>
     </div>
   </div>
 </div>
@@ -519,24 +519,24 @@ body {
 <!-- Panel 3 -->
 <div class="scenario-panel" data-panel="2">
   <div class="card scenario-detail">
-    <h3 style="margin-bottom:6px; color:var(--brand-70);">情境 3：ULB = $40, Org Budget = $0</h3>
-    <p style="font-size:13px; color:var(--neutral-60); margin-bottom:16px;">ULB 高於 Included — 可共享 Pool，但無超額</p>
+    <h3 style="margin-bottom:6px; color:var(--brand-70);">Scenario 3: ULB = $40, Org Budget = $0</h3>
+    <p style="font-size:13px; color:var(--neutral-60); margin-bottom:16px;">ULB exceeds included credits — Pool can be shared, but no overage.</p>
     <div class="setting-grid">
       <div class="setting-item"><div class="s-label">ULB</div><div class="s-value">$40</div><div class="s-sub">&gt; Included</div></div>
-      <div class="setting-item"><div class="s-label">Credits/人</div><div class="s-value">4,000</div><div class="s-sub">個人上限</div></div>
-      <div class="setting-item"><div class="s-label">Org Budget</div><div class="s-value">$0</div><div class="s-sub">禁止超額</div></div>
-      <div class="setting-item"><div class="s-label">最大總容量</div><div class="s-value">30,000</div><div class="s-sub">受 Pool 限制</div></div>
+      <div class="setting-item"><div class="s-label">Credits/User</div><div class="s-value">4,000</div><div class="s-sub">Per-user cap</div></div>
+      <div class="setting-item"><div class="s-label">Org Budget</div><div class="s-value">$0</div><div class="s-sub">No overage</div></div>
+      <div class="setting-item"><div class="s-label">Max Total Capacity</div><div class="s-value">30,000</div><div class="s-sub">Bounded by Pool</div></div>
     </div>
     <ul class="behavior-list">
-      <li>每人上限 4,000，但 Pool 只有 30,000</li>
-      <li>Power user 可從 Pool 取超過 3,000（最多 4,000），前提是其他人用得少</li>
-      <li>Pool 耗盡後 → 所有人 block（Org Budget = $0）</li>
-      <li>即使某使用者 ULB 還沒到 4,000，Pool 空了就停</li>
-      <li><strong>月費試算：</strong>$190 (seats) + $0 (overage) = <strong>$190</strong></li>
+      <li>Each user is capped at 4,000 credits, but the Pool total is only 30,000.</li>
+      <li>Power users can draw more than 3,000 (up to 4,000), as long as others use less.</li>
+      <li>When Pool is exhausted → everyone is blocked (Org Budget = $0).</li>
+      <li>Even if a user's ULB hasn't reached 4,000, they stop when the Pool runs out.</li>
+      <li><strong>Monthly estimate:</strong> $190 (seats) + $0 (overage) = <strong>$190</strong></li>
     </ul>
     <div class="callout warn">
       <span class="callout-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="var(--yellow-primary)"><path d="M8 1L0 15h16L8 1zm0 3.5l5.25 9.5H2.75L8 4.5zM7 7v4h2V7H7zm0 5v2h2v-2H7z"/></svg></span>
-      <span><strong>風險：</strong>一個 power user 大量消耗可能導致其他人提前被 block。適用於成本限制嚴格但願意允許靈活分配的團隊。</span>
+      <span><strong>Risk:</strong> Heavy consumption by one power user can block others early. Good for teams with strict cost limits that still want flexible allocation.</span>
     </div>
   </div>
 </div>
@@ -544,24 +544,24 @@ body {
 <!-- Panel 4 -->
 <div class="scenario-panel" data-panel="3">
   <div class="card scenario-detail">
-    <h3 style="margin-bottom:6px; color:var(--brand-70);">情境 4：ULB = $40, Org Budget = $100</h3>
-    <p style="font-size:13px; color:var(--neutral-60); margin-bottom:16px;">共享 Pool + 超額預算 — 最常見、推薦配法</p>
+    <h3 style="margin-bottom:6px; color:var(--brand-70);">Scenario 4: ULB = $40, Org Budget = $100</h3>
+    <p style="font-size:13px; color:var(--neutral-60); margin-bottom:16px;">Shared Pool + overage budget — the most common, recommended configuration.</p>
     <div class="setting-grid">
       <div class="setting-item"><div class="s-label">ULB</div><div class="s-value">$40</div><div class="s-sub">&gt; Included</div></div>
-      <div class="setting-item"><div class="s-label">Credits/人</div><div class="s-value">4,000</div><div class="s-sub">個人上限</div></div>
-      <div class="setting-item"><div class="s-label">Org Budget</div><div class="s-value">$100</div><div class="s-sub">超額天花板</div></div>
-      <div class="setting-item"><div class="s-label">最大總容量</div><div class="s-value">40,000</div><div class="s-sub">30,000 + 10,000 overage</div></div>
+      <div class="setting-item"><div class="s-label">Credits/User</div><div class="s-value">4,000</div><div class="s-sub">Per-user cap</div></div>
+      <div class="setting-item"><div class="s-label">Org Budget</div><div class="s-value">$100</div><div class="s-sub">Overage ceiling</div></div>
+      <div class="setting-item"><div class="s-label">Max Total Capacity</div><div class="s-value">40,000</div><div class="s-sub">30,000 + 10,000 overage</div></div>
     </div>
     <ul class="behavior-list">
-      <li>Pool 共享使用，每人上限 4,000</li>
-      <li>Pool 耗盡後 → Additional usage 啟動，Org 最多再花 $100</li>
-      <li>總容量 = 30,000（pool）+ 10,000（overage）= <strong>40,000 credits</strong></li>
-      <li>10 × 4,000 ULB = 40,000，ULB 與 Pool+Budget 數字完美對齊</li>
-      <li><strong>月費試算：</strong>$190 (seats) + $100 (overage) = <strong>$290</strong></li>
+      <li>Pool is shared; each user is capped at 4,000 credits.</li>
+      <li>After Pool is depleted → additional usage kicks in, org spends up to $100 more.</li>
+      <li>Total capacity = 30,000 (pool) + 10,000 (overage) = <strong>40,000 credits</strong></li>
+      <li>10 × 4,000 ULB = 40,000 — ULB sum aligns perfectly with Pool + Budget.</li>
+      <li><strong>Monthly estimate:</strong> $190 (seats) + $100 (overage) = <strong>$290</strong></li>
     </ul>
     <div class="callout tip">
       <span class="callout-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="var(--green-primary)"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zm3.78 5.28l-4.5 5.5a.75.75 0 01-1.12.04l-2.5-2.5a.75.75 0 111.06-1.06l1.92 1.92 3.96-4.84a.75.75 0 111.18.94z"/></svg></span>
-      <span><strong>推薦：</strong>允許彈性但設天花板，適合大多數團隊。</span>
+      <span><strong>Recommended:</strong> Allows flexibility while setting a hard ceiling. Suitable for most teams.</span>
     </div>
   </div>
 </div>
@@ -569,24 +569,24 @@ body {
 <!-- Panel 5 -->
 <div class="scenario-panel" data-panel="4">
   <div class="card scenario-detail">
-    <h3 style="margin-bottom:6px; color:var(--brand-70);">情境 5：Enterprise 多 Org + Enterprise Budget</h3>
-    <p style="font-size:13px; color:var(--neutral-60); margin-bottom:16px;">Org A (25 人) + Org B (25 人)，ULB $40，各 Org Budget $500，Enterprise Budget $800 為全局剎車</p>
+    <h3 style="margin-bottom:6px; color:var(--brand-70);">Scenario 5: Enterprise with Multiple Orgs + Enterprise Budget</h3>
+    <p style="font-size:13px; color:var(--neutral-60); margin-bottom:16px;">Org A (25 users) + Org B (25 users), ULB $40, each Org Budget $500, Enterprise Budget $800 as global kill switch.</p>
     <div class="setting-grid">
-      <div class="setting-item"><div class="s-label">ULB</div><div class="s-value">$40</div><div class="s-sub">/人，各 Org 適用</div></div>
-      <div class="setting-item"><div class="s-label">Org A / B Budget</div><div class="s-value">$500</div><div class="s-sub">各 Org 超額上限</div></div>
-      <div class="setting-item"><div class="s-label">Enterprise Budget</div><div class="s-value">$800</div><div class="s-sub">&lt; 兩 Org 加總 $1,000</div></div>
-      <div class="setting-item"><div class="s-label">最大超額費用</div><div class="s-value">$800</div><div class="s-sub">由 Enterprise Budget 收斂</div></div>
+      <div class="setting-item"><div class="s-label">ULB</div><div class="s-value">$40</div><div class="s-sub">/user, applies to all orgs</div></div>
+      <div class="setting-item"><div class="s-label">Org A / B Budget</div><div class="s-value">$500</div><div class="s-sub">Per-org overage limit</div></div>
+      <div class="setting-item"><div class="s-label">Enterprise Budget</div><div class="s-value">$800</div><div class="s-sub">&lt; combined org total $1,000</div></div>
+      <div class="setting-item"><div class="s-label">Max Overage Spend</div><div class="s-value">$800</div><div class="s-sub">Capped by Enterprise Budget</div></div>
     </div>
     <ul class="behavior-list">
-      <li>每個 Org 各自 25 人 × ULB $40 → 每人最多 $40，每 Org overage 上限為 Org Budget $500（&lt; ULB×seats $1,000）</li>
-      <li>Overage 消耗<strong>同時</strong>計入 Org Budget 和 Enterprise Budget</li>
-      <li>Org A 用完 $500 → Org A 被 block，Org B 不受影響</li>
-      <li>Enterprise Budget 到 $800 → <strong>所有 Org 立刻被 block</strong>，即使 Org B 自己的 $500 還沒花完（這就是「全局剎車」效果）</li>
-      <li><strong>月費試算：</strong>seats + 最多 $800 overage（Enterprise Budget &lt; Σ Org Budget 才有實際剎車效果）</li>
+      <li>Each org has 25 users × ULB $40 → per-user max $40; per-org overage capped at Org Budget $500 (less than ULB×seats $1,000).</li>
+      <li>Overage spend is counted <strong>simultaneously</strong> against both the Org Budget and the Enterprise Budget.</li>
+      <li>Org A hits $500 → Org A is blocked; Org B is unaffected.</li>
+      <li>Enterprise Budget hits $800 → <strong>all orgs are blocked immediately</strong>, even if Org B hasn't spent its own $500 yet (this is the "global kill switch" effect).</li>
+      <li><strong>Monthly estimate:</strong> seats + up to $800 overage (Enterprise Budget only acts as a real brake when it's less than the sum of all Org Budgets).</li>
     </ul>
     <div class="callout risk">
       <span class="callout-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="var(--red-primary)"><path d="M8 1L0 15h16L8 1zm0 3.5l5.25 9.5H2.75L8 4.5zM7 7v4h2V7H7zm0 5v2h2v-2H7z"/></svg></span>
-      <span><strong>關鍵風險：</strong>若 Enterprise Budget ≥ 各 Org Budget 加總，它就只是裝飾品；若 &lt; 加總值，Org A 大量消耗會擠壓 Org B 可用額度。</span>
+      <span><strong>Key risk:</strong> If Enterprise Budget ≥ sum of all Org Budgets, it's decorative. If &lt; the sum, heavy spending by Org A squeezes Org B's available headroom.</span>
     </div>
   </div>
 </div>
@@ -594,96 +594,96 @@ body {
 <!-- Panel 6 -->
 <div class="scenario-panel" data-panel="5">
   <div class="card scenario-detail">
-    <h3 style="margin-bottom:6px; color:var(--brand-70);">情境 6：不同人不同 ULB</h3>
-    <p style="font-size:13px; color:var(--neutral-60); margin-bottom:16px;">差異化配置 — 最靈活，但管理複雜度最高</p>
+    <h3 style="margin-bottom:6px; color:var(--brand-70);">Scenario 6: Tiered ULB by Role</h3>
+    <p style="font-size:13px; color:var(--neutral-60); margin-bottom:16px;">Differentiated configuration — most flexible, but highest management complexity.</p>
     <div class="setting-grid">
-      <div class="setting-item"><div class="s-label">Senior × 2</div><div class="s-value">$60</div><div class="s-sub">6,000 credits/人</div></div>
-      <div class="setting-item"><div class="s-label">Junior × 8</div><div class="s-value">$20</div><div class="s-sub">2,000 credits/人</div></div>
-      <div class="setting-item"><div class="s-label">Org Budget</div><div class="s-value">$0</div><div class="s-sub">兜底，禁止任何超額</div></div>
-      <div class="setting-item"><div class="s-label">ULB 加總</div><div class="s-value">28,000</div><div class="s-sub">&lt; Pool 30,000，無超額空間</div></div>
+      <div class="setting-item"><div class="s-label">Senior × 2</div><div class="s-value">$60</div><div class="s-sub">6,000 credits/user</div></div>
+      <div class="setting-item"><div class="s-label">Junior × 8</div><div class="s-value">$20</div><div class="s-sub">2,000 credits/user</div></div>
+      <div class="setting-item"><div class="s-label">Org Budget</div><div class="s-value">$0</div><div class="s-sub">Safety net, no overage</div></div>
+      <div class="setting-item"><div class="s-label">Total ULB Sum</div><div class="s-value">28,000</div><div class="s-sub">&lt; Pool 30,000, safe</div></div>
     </div>
     <ul class="behavior-list">
-      <li>所有人從同一 Pool（30,000）取用</li>
-      <li>Senior dev 可使用更多 credits（上限 6,000），Junior 受限較嚴（上限 2,000）</li>
-      <li>ULB 加總（28,000）&lt; Pool（30,000）：即使所有人都達上限仍不會超出 Pool，Org Budget = $0 即可安全兜底</li>
-      <li>設計進階：有明確角色分工的大型團隊，讓核心開發者有更多資源</li>
-      <li><strong>月費試算：</strong>$190 (seats) + $0 (overage) = <strong>$190</strong>（固定，無超額風險）</li>
+      <li>Everyone draws from the same Pool (30,000).</li>
+      <li>Senior devs have higher credit headroom (up to 6,000); juniors are more constrained (up to 2,000).</li>
+      <li>Total ULB sum (28,000) &lt; Pool (30,000): even if all users hit their cap, the Pool isn't exhausted — Org Budget = $0 is a safe backstop.</li>
+      <li>Advanced design: ideal for larger teams with clear role divisions, giving core developers more resources.</li>
+      <li><strong>Monthly estimate:</strong> $190 (seats) + $0 (overage) = <strong>$190</strong> (fixed, no overage risk)</li>
     </ul>
     <div class="callout info">
       <span class="callout-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a4.5 4.5 0 00-1.5 8.74V12.5a1.5 1.5 0 001.5 1.5h0a1.5 1.5 0 001.5-1.5V9.74A4.5 4.5 0 008 1zM6.5 15h3v1h-3v-1z"/></svg></span>
-      <span><strong>適用場景：</strong>有明確角色分工的大型團隊。需定期 review 個人使用量，動態調整。</span>
+      <span><strong>Best for:</strong> Larger teams with well-defined role structures. Requires periodic review of individual usage and dynamic adjustment.</span>
     </div>
   </div>
 </div>
 
-<!-- ═══ 互動式成本模擬器 ═══ -->
+<!-- ═══ Interactive Cost Simulator ═══ -->
 <div class="section-header" id="sim-section">
   <div class="section-icon green"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 1a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V2a1 1 0 00-1-1H2zm1 2h10v2H3V3zm0 4h2v2H3V7zm4 0h2v2H7V7zm4 0h2v2h-2V7zM3 11h2v2H3v-2zm4 0h2v2H7v-2zm4 0h2v2h-2v-2z"/></svg></div>
-  <h2>互動式成本模擬器</h2>
+  <h2>Interactive Cost Simulator</h2>
 </div>
 <div class="card simulator">
-  <div class="sim-title">調整參數，即時查看成本影響</div>
+  <div class="sim-title">Adjust the sliders to see real-time cost impact</div>
   <div class="sim-controls">
     <div class="sim-field">
-      <label>使用者人數</label>
+      <label>Number of Users</label>
       <input type="range" id="simUsers" min="1" max="100" value="10" oninput="updateSim()">
       <div class="range-val" id="simUsersVal">10</div>
     </div>
     <div class="sim-field">
-      <label>ULB（$/user）</label>
+      <label>ULB ($/user)</label>
       <input type="range" id="simUlb" min="0" max="100" value="40" oninput="updateSim()">
       <div class="range-val" id="simUlbVal">$40</div>
     </div>
     <div class="sim-field">
-      <label>Org Budget（$）</label>
+      <label>Org Budget ($)</label>
       <input type="range" id="simOrgBudget" min="0" max="2000" step="50" value="100" oninput="updateSim()">
       <div class="range-val" id="simOrgBudgetVal">$100</div>
     </div>
     <div class="sim-field">
-      <label>每人 Included Credits</label>
+      <label>Included Credits/User</label>
       <input type="range" id="simIncluded" min="1900" max="7000" step="100" value="3000" oninput="updateSim()">
       <div class="range-val" id="simIncludedVal">3,000</div>
     </div>
   </div>
   <div class="sim-results">
     <div class="sim-result-card">
-      <div class="r-label">Pool 總量</div>
+      <div class="r-label">Pool Total</div>
       <div class="r-value blue" id="resPool">30,000</div>
       <div class="r-sub">credits</div>
     </div>
     <div class="sim-result-card">
-      <div class="r-label">Seat 月費</div>
+      <div class="r-label">Seat Cost/mo</div>
       <div class="r-value green" id="resSeat">$190</div>
       <div class="r-sub">$19 × users</div>
     </div>
     <div class="sim-result-card">
-      <div class="r-label">最大 Overage</div>
+      <div class="r-label">Max Overage</div>
       <div class="r-value red" id="resOverage">$100</div>
       <div class="r-sub">org budget</div>
     </div>
     <div class="sim-result-card">
-      <div class="r-label">最差月費總計</div>
+      <div class="r-label">Worst-Case Monthly</div>
       <div class="r-value purple" id="resTotal">$290</div>
       <div class="r-sub">seats + overage</div>
     </div>
   </div>
   <div style="margin-top:16px; font-size:12px; color:var(--neutral-60);">
-    <strong>Pool 共享效果：</strong>
-    <span id="resPooling">ULB ($40) &gt; Included ($30) → Pool 可共享，power user 可取用更多</span>
+    <strong>Pool Sharing Effect:</strong>
+    <span id="resPooling">ULB ($40) &gt; Included ($30) → Pool can be shared; power users can draw more</span>
   </div>
 </div>
 
-<!-- ═══ 管理要點 ═══ -->
+<!-- ═══ Management Best Practices ═══ -->
 <div class="section-header" id="requirements">
   <div class="section-icon yellow"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a1.6 1.6 0 00-.8.22L1.6 3.78A1.6 1.6 0 000 5.14v5.72a1.6 1.6 0 00.8 1.36l5.6 3.56A1.6 1.6 0 008 16a1.6 1.6 0 00.8-.22l5.6-3.56a1.6 1.6 0 00.8-1.36V5.14a1.6 1.6 0 00-.8-1.36L8.8.22A1.6 1.6 0 008 0zm0 5a3 3 0 110 6 3 3 0 010-6z"/></svg></div>
-  <h2>管理要點</h2>
+  <h2>Management Best Practices</h2>
 </div>
 <div class="req-grid">
   <div class="card req-card">
     <span class="req-num">1</span>
-    <h4>務必勾選「Stop usage when budget limit is reached」</h4>
-    <p>設定 budget 時，必須勾選此選項才能 hard stop。</p>
-    <div class="req-danger">若未勾選，budget 只是 alert，不會阻止 usage，可能導致帳單超出預期。這是最常見的管理疏忽。</div>
+    <h4>Always check "Stop usage when budget limit is reached"</h4>
+    <p>When configuring a budget, you must check this option to enforce a hard stop.</p>
+    <div class="req-danger">If left unchecked, the budget only triggers an alert — it will not stop usage. This can lead to unexpected charges and is the most common management oversight.</div>
     <div class="ref-links">
       <a class="ref-link" href="https://docs.github.com/en/billing/how-tos/set-up-budgets" target="_blank">Setting up budgets</a>
       <a class="ref-link" href="https://docs.github.com/en/billing/concepts/budgets-and-alerts#stopping-usage" target="_blank">Stopping usage</a>
@@ -691,13 +691,13 @@ body {
   </div>
   <div class="card req-card">
     <span class="req-num">2</span>
-    <h4>用 Budget 金額來控制是否允許超額</h4>
-    <p>新版 GitHub Billing UI 沒有獨立的「Additional usage allowed / not allowed」開關，這個控制已經整合到 <strong>Budget 設定</strong>裡。實際決定行為的是「Budget 金額」加上「Stop usage when budget limit is reached」勾選框：</p>
+    <h4>Use Budget amount to control whether overage is allowed</h4>
+    <p>The new GitHub Billing UI does not have a standalone "Additional usage allowed / not allowed" toggle — that control is now integrated into the <strong>Budget settings</strong>. The actual behavior is determined by the budget amount combined with the "Stop usage when budget limit is reached" checkbox:</p>
     <ul style="margin:10px 0; padding-left:20px; font-size:14px; color:var(--neutral-80);">
-      <li><strong>Budget = $0 + Stop usage 勾選</strong>：等同「Not allowed」— Pool 用完就全停</li>
-      <li><strong>Budget &gt; $0 + Stop usage 勾選</strong>：等同「Allowed up to budget」— Pool 用完後繼續使用，費用依 published rates 計算，到 budget 上限就 hard stop</li>
-      <li><strong>Stop usage 未勾選</strong>：Pool 用完後無上限超額，budget 只發 email 警示，<span style="color:var(--red-primary);">不建議</span></li>
-      <li><strong>沒設 Budget</strong>：依 plan 預設行為（Business/Enterprise 預設不允許超額；個人 Pro 帳號預設行為依 GitHub plan 條款）</li>
+      <li><strong>Budget = $0 + Stop usage checked:</strong> Equivalent to "Not allowed" — stops entirely when Pool is exhausted.</li>
+      <li><strong>Budget &gt; $0 + Stop usage checked:</strong> Equivalent to "Allowed up to budget" — continues after Pool is depleted at published rates, then hard stops at the budget limit.</li>
+      <li><strong>Stop usage unchecked:</strong> Unlimited overage after Pool is gone; budget sends email alerts only. <span style="color:var(--red-primary);">Not recommended.</span></li>
+      <li><strong>No budget set:</strong> Follows plan defaults (Business/Enterprise default to no overage; individual Pro accounts follow GitHub plan terms).</li>
     </ul>
     <div class="ref-links">
       <a class="ref-link" href="https://docs.github.com/en/billing/how-tos/set-up-budgets" target="_blank">Set up budgets</a>
@@ -706,12 +706,12 @@ body {
   </div>
   <div class="card req-card">
     <span class="req-num">3</span>
-    <h4>啟用 Included Usage Alerts</h4>
-    <p>可在 Budgets &amp; Alerts 頁面啟用 included usage alerts：</p>
+    <h4>Enable Included Usage Alerts</h4>
+    <p>On the Budgets &amp; Alerts page, you can enable included usage alerts:</p>
     <ul style="margin:10px 0; padding-left:20px; font-size:14px; color:var(--neutral-80);">
-      <li>Pool 到 <strong>90%</strong> 和 <strong>100%</strong> 時寄 email 通知</li>
-      <li>這和 budget alerts 是<strong>不同的機制</strong>：一個追蹤 included usage 消耗比例，一個追蹤 dollar budget</li>
-      <li><strong>建議兩者都啟用</strong></li>
+      <li>Receive email notifications when Pool reaches <strong>90%</strong> and <strong>100%</strong>.</li>
+      <li>This is a <strong>separate mechanism</strong> from budget alerts: one tracks included usage consumption percentage, the other tracks dollar spend.</li>
+      <li><strong>Recommended: enable both.</strong></li>
     </ul>
     <div class="ref-links">
       <a class="ref-link" href="https://docs.github.com/en/billing/concepts/budgets-and-alerts#included-usage-alerts" target="_blank">Included usage alerts</a>
@@ -720,47 +720,47 @@ body {
   </div>
 </div>
 
-<!-- ═══ 相關連結 ═══ -->
+<!-- ═══ Reference Links ═══ -->
 <div class="section-header" id="links">
   <div class="section-icon purple"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M7.78 0a.75.75 0 01.53.22l3.47 3.47a.75.75 0 010 1.06L8.53 8l3.25 3.25a.75.75 0 010 1.06l-3.47 3.47a.75.75 0 01-1.06 0L4 12.53l-3.25 3.25a.75.75 0 01-1.06-1.06L2.94 11.47.22 8.75a.75.75 0 010-1.06L3.69 4.22.22 1.28A.75.75 0 011.28.22L4 2.94 7.25.22A.75.75 0 017.78 0z"/></svg></div>
-  <h2>相關連結</h2>
+  <h2>Reference Links</h2>
 </div>
 <div class="links-grid">
   <a class="card link-card" href="https://docs.github.com/en/copilot/concepts/billing/usage-based-billing-for-organizations-and-enterprises" target="_blank">
-    <div class="lc-title">Usage-Based Billing 主頁</div>
-    <div class="lc-desc">Organizations 與 Enterprises 的 usage-based billing 完整說明</div>
+    <div class="lc-title">Usage-Based Billing Overview</div>
+    <div class="lc-desc">Complete guide to usage-based billing for Organizations and Enterprises</div>
   </a>
   <a class="card link-card" href="https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing" target="_blank">
     <div class="lc-title">Models and Pricing</div>
-    <div class="lc-desc">各模型的 per-token 定價與 AI Credits 計算方式</div>
+    <div class="lc-desc">Per-token pricing for each model and how AI Credits are calculated</div>
   </a>
   <a class="card link-card" href="https://docs.github.com/en/billing/how-tos/set-up-budgets" target="_blank">
-    <div class="lc-title">設定 Budget</div>
-    <div class="lc-desc">建立 product/SKU/bundled budget 與設定 Stop usage</div>
+    <div class="lc-title">Set Up Budgets</div>
+    <div class="lc-desc">Create product/SKU/bundled budgets and configure Stop usage</div>
   </a>
   <a class="card link-card" href="https://docs.github.com/en/billing/concepts/budgets-and-alerts" target="_blank">
-    <div class="lc-title">Budget 概念與 Alerts</div>
-    <div class="lc-desc">Budget 類型、scope、stopping usage、included usage alerts</div>
+    <div class="lc-title">Budget Concepts &amp; Alerts</div>
+    <div class="lc-desc">Budget types, scope, stopping usage, and included usage alerts</div>
   </a>
   <a class="card link-card" href="https://docs.github.com/en/copilot/how-tos/manage-and-track-spending/prepare-for-usage-based-billing" target="_blank">
-    <div class="lc-title">準備轉換指南</div>
-    <div class="lc-desc">從 request-based 轉 usage-based billing 的準備步驟</div>
+    <div class="lc-title">Migration Preparation Guide</div>
+    <div class="lc-desc">Steps to prepare for switching from request-based to usage-based billing</div>
   </a>
   <a class="card link-card" href="https://docs.github.com/en/copilot/concepts/billing/usage-based-billing-for-organizations-and-enterprises#what-happens-if-i-exceed-my-included-ai-credits" target="_blank">
-    <div class="lc-title">Pool 耗盡行為</div>
-    <div class="lc-desc">Included credits 用完後的兩種行為模式</div>
+    <div class="lc-title">Pool Exhaustion Behavior</div>
+    <div class="lc-desc">Two behavior modes when included credits are depleted</div>
   </a>
   <a class="card link-card" href="https://docs.github.com/en/copilot/concepts/billing/usage-based-billing-for-organizations-and-enterprises#how-can-i-control-costs-with-budgets" target="_blank">
-    <div class="lc-title">Budget 控制層級</div>
-    <div class="lc-desc">Enterprise / Org / Cost Center / User 四層 budget 說明</div>
+    <div class="lc-title">Budget Control Levels</div>
+    <div class="lc-desc">Four-tier budget control: Enterprise / Org / Cost Center / User</div>
   </a>
   <a class="card link-card" href="https://docs.github.com/en/billing/concepts/budgets-and-alerts#included-usage-alerts" target="_blank">
     <div class="lc-title">Included Usage Alerts</div>
-    <div class="lc-desc">Pool 消耗 90%/100% 的 email 通知機制</div>
+    <div class="lc-desc">Email notification mechanism at 90% / 100% Pool consumption</div>
   </a>
   <a class="card link-card" href="https://docs.github.com/en/billing/concepts/budgets-and-alerts#stopping-usage" target="_blank">
     <div class="lc-title">Stopping Usage</div>
-    <div class="lc-desc">勾選「Stop usage when budget limit is reached」的行為說明</div>
+    <div class="lc-desc">How "Stop usage when budget limit is reached" works</div>
   </a>
 </div>
 
@@ -808,13 +808,13 @@ function updateSim() {
 
   var poolingEl = document.getElementById('resPooling');
   if (ulb === 0) {
-    poolingEl.textContent = 'ULB = $0 → 使用者完全無法使用 Copilot';
+    poolingEl.textContent = 'ULB = $0 → Users cannot use Copilot at all';
   } else if (ulb < includedPerUserDollar) {
-    poolingEl.textContent = 'ULB ($' + ulb + ') < Included ($' + includedPerUserDollar + ') → 每人限制低於 included，pool 效果被消除且有剩餘';
+    poolingEl.textContent = 'ULB ($' + ulb + ') < Included ($' + includedPerUserDollar + ') → Per-user limit is below included; pooling is negated and credits will go unused';
   } else if (ulb === includedPerUserDollar) {
-    poolingEl.textContent = 'ULB ($' + ulb + ') = Included ($' + includedPerUserDollar + ') → Pool 效果被消除，等同個人 bucket';
+    poolingEl.textContent = 'ULB ($' + ulb + ') = Included ($' + includedPerUserDollar + ') → Pooling benefit is eliminated; effectively individual buckets';
   } else {
-    poolingEl.textContent = 'ULB ($' + ulb + ') > Included ($' + includedPerUserDollar + ') → Pool 可共享，power user 可取用更多';
+    poolingEl.textContent = 'ULB ($' + ulb + ') > Included ($' + includedPerUserDollar + ') → Pool can be shared; power users can draw more credits';
   }
 }
 
