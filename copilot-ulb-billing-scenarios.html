@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub Copilot Usage-Based Billing — 情境分析與管理要點</title>
+<style>
+/* ═══════════════════════════════════════════
+   Fluent UI Design Tokens
+   ═══════════════════════════════════════════ */
+:root {
+  --brand-10: #061724; --brand-20: #082338; --brand-30: #0a2e4a;
+  --brand-40: #0c3b5e; --brand-50: #0e4775; --brand-60: #0f548c;
+  --brand-70: #115ea3; --brand-80: #0f6cbd; --brand-90: #2886de;
+  --brand-100: #479ef5; --brand-110: #62abf5; --brand-120: #77b7f7;
+  --brand-130: #96c6fa; --brand-140: #b4d6fa; --brand-150: #cfe4fa; --brand-160: #ebf3fc;
+  --neutral-2: #fafafa; --neutral-4: #f5f5f5; --neutral-6: #f0f0f0;
+  --neutral-8: #ebebeb; --neutral-10: #e0e0e0; --neutral-20: #d1d1d1;
+  --neutral-30: #c0c0c0; --neutral-40: #a0a0a0; --neutral-60: #707070;
+  --neutral-80: #424242; --neutral-90: #303030; --neutral-95: #212121;
+  --green-primary: #107c10; --green-bg: #dff6dd; --green-border: #9fd89f;
+  --yellow-primary: #f7630c; --yellow-bg: #fff4ce; --yellow-border: #ffd335;
+  --red-primary: #d13438; --red-bg: #fde7e9; --red-border: #f1707a;
+  --purple: #5c2d91;
+  --shadow-2: 0 1px 2px rgba(0,0,0,0.12);
+  --shadow-4: 0 2px 4px rgba(0,0,0,0.14);
+  --shadow-8: 0 4px 8px rgba(0,0,0,0.14);
+  --shadow-16: 0 8px 16px rgba(0,0,0,0.14);
+  --shadow-28: 0 14px 28px rgba(0,0,0,0.14);
+  --radius-m: 8px; --radius-l: 12px; --radius-xl: 16px;
+  --duration-fast: 0.15s; --duration-normal: 0.25s; --duration-slow: 0.35s;
+  --ease-decel: cubic-bezier(0, 0, 0, 1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+body {
+  font-family: 'Segoe UI Variable', 'Segoe UI', 'Microsoft JhengHei', -apple-system, system-ui, sans-serif;
+  font-size: 14px; line-height: 1.6; color: var(--neutral-95);
+  background: var(--neutral-4);
+}
+
+/* ═══ Top Bar ═══ */
+.topbar {
+  position: sticky; top: 0; z-index: 1000;
+  height: 48px; background: var(--neutral-95);
+  display: flex; align-items: center; padding: 0 24px; gap: 16px;
+  box-shadow: var(--shadow-4);
+}
+.topbar svg { width: 20px; height: 20px; fill: white; flex-shrink: 0; }
+.topbar .sep { width: 1px; height: 20px; background: rgba(255,255,255,0.2); }
+.topbar .title { color: rgba(255,255,255,0.92); font-size: 13px; font-weight: 600; }
+.topbar .badge {
+  margin-left: auto; font-size: 11px; font-weight: 600;
+  background: var(--brand-80); color: white;
+  padding: 2px 10px; border-radius: 10px;
+}
+
+/* ═══ Hero ═══ */
+.hero {
+  background: linear-gradient(135deg, var(--brand-40) 0%, var(--purple) 40%, var(--brand-60) 100%);
+  color: white; padding: 64px 32px 72px; position: relative; overflow: hidden;
+}
+.hero::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.08) 0%, transparent 70%);
+}
+.hero-inner { max-width: 960px; margin: 0 auto; position: relative; }
+.hero .tag {
+  display: inline-block; padding: 3px 12px; border-radius: 10px;
+  background: rgba(255,255,255,0.15); font-size: 11px; font-weight: 600;
+  letter-spacing: 1px; text-transform: uppercase; margin-bottom: 16px;
+  backdrop-filter: blur(4px);
+}
+.hero h1 { font-size: 40px; font-weight: 700; letter-spacing: -1px; margin-bottom: 12px; }
+.hero .subtitle { font-size: 16px; opacity: 0.88; max-width: 640px; line-height: 1.7; }
+
+/* ═══ Container ═══ */
+.container { max-width: 1120px; margin: 0 auto; padding: 32px 24px 80px; }
+
+/* ═══ Section Headers ═══ */
+.section-header {
+  display: flex; align-items: center; gap: 12px;
+  margin: 48px 0 20px; scroll-margin-top: 72px;
+}
+.section-header:first-of-type { margin-top: 0; }
+.section-icon {
+  width: 36px; height: 36px; border-radius: var(--radius-m);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.section-icon.blue { background: var(--brand-160); color: var(--brand-80); }
+.section-icon.green { background: var(--green-bg); color: var(--green-primary); }
+.section-icon.yellow { background: var(--yellow-bg); color: var(--yellow-primary); }
+.section-icon.purple { background: #f3e8ff; color: var(--purple); }
+.section-header h2 {
+  font-size: 22px; font-weight: 700; letter-spacing: -0.3px; color: var(--neutral-95);
+}
+
+/* ═══ Cards ═══ */
+.card {
+  background: white; border: 1px solid var(--neutral-10);
+  border-radius: var(--radius-l); padding: 28px 32px;
+  box-shadow: var(--shadow-2);
+  transition: box-shadow var(--duration-normal) var(--ease-decel),
+              border-color var(--duration-normal) var(--ease-decel);
+}
+.card:hover { box-shadow: var(--shadow-8); border-color: var(--neutral-20); }
+
+/* ═══ Info Grid ═══ */
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 16px 0; }
+.info-card { padding: 20px 24px; }
+.info-card .label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.6px; color: var(--neutral-60); margin-bottom: 4px;
+}
+.info-card .value { font-size: 16px; font-weight: 600; color: var(--neutral-95); }
+.info-card .value .highlight { color: var(--brand-80); }
+.info-card .note { font-size: 12px; color: var(--neutral-60); margin-top: 4px; }
+
+/* ═══ Concept Chips ═══ */
+.concept-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 16px 0; }
+.concept-chip { padding: 16px 20px; border-left: 3px solid var(--brand-80); cursor: default; }
+.concept-chip .chip-title { font-size: 14px; font-weight: 700; color: var(--brand-70); margin-bottom: 6px; }
+.concept-chip .chip-desc { font-size: 13px; color: var(--neutral-80); line-height: 1.6; }
+
+/* ═══ Summary Table ═══ */
+.summary-wrap { margin: 16px 0; overflow-x: auto; }
+.summary-table {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  border-radius: var(--radius-l); overflow: hidden; box-shadow: var(--shadow-4);
+}
+.summary-table thead th {
+  background: var(--brand-70); color: white;
+  padding: 14px 16px; font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  text-align: left; white-space: nowrap;
+}
+.summary-table tbody td {
+  padding: 14px 16px; font-size: 13px;
+  border-bottom: 1px solid var(--neutral-8); background: white;
+  transition: background var(--duration-fast) var(--ease-decel);
+}
+.summary-table tbody tr { cursor: pointer; }
+.summary-table tbody tr:hover td { background: var(--brand-160); }
+.summary-table tbody tr.active td { background: var(--brand-150); font-weight: 600; }
+.summary-table tbody tr:last-child td { border-bottom: none; }
+.badge-yes { color: var(--green-primary); font-weight: 700; }
+.badge-no { color: var(--red-primary); font-weight: 700; }
+.risk-tag {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 11px; font-weight: 600;
+}
+.risk-high { background: var(--red-bg); color: var(--red-primary); }
+.risk-med { background: var(--yellow-bg); color: var(--yellow-primary); }
+.risk-low { background: var(--green-bg); color: var(--green-primary); }
+
+/* ═══ Scenario Tabs ═══ */
+.scenario-tabs {
+  display: flex; gap: 6px; margin: 16px 0 0;
+  border-bottom: 2px solid var(--neutral-10); overflow-x: auto;
+  background: var(--neutral-4);
+  position: sticky; top: 48px; z-index: 50;
+  padding-top: 8px;
+}
+.tab-btn {
+  padding: 10px 20px; font-size: 13px; font-weight: 600;
+  color: var(--neutral-60); background: transparent;
+  border: none; border-bottom: 2px solid transparent;
+  cursor: pointer; white-space: nowrap;
+  transition: all var(--duration-normal) var(--ease-decel);
+  margin-bottom: -2px; border-radius: var(--radius-m) var(--radius-m) 0 0;
+}
+.tab-btn:hover { color: var(--brand-80); background: var(--brand-160); }
+.tab-btn.active { color: var(--brand-70); border-bottom-color: var(--brand-80); background: white; }
+.scenario-panel { display: none; animation: fadeSlideIn var(--duration-slow) var(--ease-decel); }
+.scenario-panel.active { display: block; }
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.scenario-detail {
+  margin-top: 0; border-top: none;
+  border-radius: 0 0 var(--radius-l) var(--radius-l); padding: 32px;
+}
+.setting-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 12px; margin-bottom: 20px;
+}
+@media (max-width: 768px) {
+  .setting-grid { grid-template-columns: repeat(2, 1fr); }
+}
+.setting-item { background: var(--neutral-4); border-radius: var(--radius-m); padding: 14px 16px; min-height: 78px; }
+.setting-item .s-label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  color: var(--neutral-60); letter-spacing: 0.5px;
+}
+.setting-item .s-value { font-size: 18px; font-weight: 700; color: var(--brand-70); margin-top: 4px; }
+.setting-item .s-sub { font-size: 11px; color: var(--neutral-60); margin-top: 2px; }
+.behavior-list { list-style: none; padding: 0; }
+.behavior-list li {
+  padding: 8px 0 8px 28px; position: relative;
+  font-size: 14px; line-height: 1.6; color: var(--neutral-80);
+  border-bottom: 1px solid var(--neutral-6);
+}
+.behavior-list li:last-child { border-bottom: none; }
+.behavior-list li::before {
+  content: ''; position: absolute; left: 8px; top: 15px;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--brand-100);
+}
+.behavior-list li strong { color: var(--neutral-95); }
+
+/* ═══ Callouts ═══ */
+.callout {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 16px 20px; border-radius: var(--radius-m);
+  margin-top: 16px; font-size: 13px; line-height: 1.6;
+}
+.callout-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.callout.risk { background: var(--red-bg); border: 1px solid var(--red-border); }
+.callout.tip { background: var(--green-bg); border: 1px solid var(--green-border); }
+.callout.warn { background: var(--yellow-bg); border: 1px solid var(--yellow-border); }
+.callout.info { background: var(--brand-160); border: 1px solid var(--brand-140); }
+
+/* ═══ Simulator ═══ */
+.simulator {
+  margin: 20px 0; padding: 32px;
+  background: linear-gradient(135deg, var(--brand-160) 0%, #f3e8ff 100%);
+  border: 1px solid var(--brand-140);
+}
+.sim-title {
+  font-size: 16px; font-weight: 700; color: var(--brand-40);
+  margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+}
+.sim-controls {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px; margin-bottom: 24px;
+}
+.sim-field label {
+  display: block; font-size: 12px; font-weight: 600;
+  color: var(--neutral-60); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.4px;
+}
+.sim-field input[type="range"] {
+  width: 100%; accent-color: var(--brand-80);
+  height: 6px; -webkit-appearance: none; appearance: none;
+  background: var(--neutral-20); border-radius: 3px; outline: none;
+}
+.sim-field input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 20px; height: 20px;
+  border-radius: 50%; background: var(--brand-80);
+  cursor: pointer; box-shadow: var(--shadow-4);
+}
+.sim-field .range-val { font-size: 20px; font-weight: 700; color: var(--brand-70); margin-top: 4px; }
+.sim-results { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.sim-result-card {
+  background: white; border-radius: var(--radius-m);
+  padding: 16px; text-align: center; box-shadow: var(--shadow-2);
+}
+.sim-result-card .r-label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  color: var(--neutral-60); letter-spacing: 0.4px;
+}
+.sim-result-card .r-value { font-size: 24px; font-weight: 700; margin-top: 6px; }
+.sim-result-card .r-value.blue { color: var(--brand-70); }
+.sim-result-card .r-value.green { color: var(--green-primary); }
+.sim-result-card .r-value.red { color: var(--red-primary); }
+.sim-result-card .r-value.purple { color: var(--purple); }
+.sim-result-card .r-sub { font-size: 11px; color: var(--neutral-60); margin-top: 2px; }
+
+/* ═══ Requirements ═══ */
+.req-grid { display: grid; gap: 16px; margin: 16px 0; }
+.req-card {
+  padding: 24px 28px; border-left: 4px solid var(--yellow-primary);
+  background: white; position: relative; overflow: hidden;
+}
+.req-card::before {
+  content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 100%;
+  background: linear-gradient(90deg, rgba(247,99,12,0.03) 0%, transparent 40%);
+  pointer-events: none;
+}
+.req-card .req-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--yellow-primary); color: white;
+  font-size: 13px; font-weight: 700; margin-right: 10px;
+}
+.req-card h4 { display: inline; font-size: 15px; font-weight: 700; color: var(--neutral-95); }
+.req-card p { margin-top: 10px; font-size: 14px; color: var(--neutral-80); line-height: 1.7; }
+.req-card .req-danger {
+  background: var(--red-bg); padding: 10px 14px; border-radius: var(--radius-m);
+  margin-top: 12px; font-size: 13px; font-weight: 600; color: var(--red-primary);
+}
+.req-card .ref-links { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+.ref-link {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 12px; border-radius: 6px;
+  background: var(--neutral-4); border: 1px solid var(--neutral-10);
+  font-size: 12px; font-weight: 600; color: var(--brand-70);
+  text-decoration: none; transition: all var(--duration-fast) var(--ease-decel);
+}
+.ref-link:hover { background: var(--brand-160); border-color: var(--brand-120); box-shadow: var(--shadow-2); }
+
+/* ═══ Links Grid ═══ */
+.links-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0; }
+.link-card {
+  display: flex; flex-direction: column; padding: 18px 20px;
+  text-decoration: none; color: inherit;
+  transition: all var(--duration-normal) var(--ease-decel);
+}
+.link-card:hover { border-color: var(--brand-100); box-shadow: var(--shadow-8); transform: translateY(-2px); }
+.link-card .lc-title { font-size: 14px; font-weight: 600; color: var(--brand-70); margin-bottom: 6px; }
+.link-card .lc-desc { font-size: 12px; color: var(--neutral-60); line-height: 1.5; }
+
+/* ═══ Responsive ═══ */
+@media (max-width: 768px) {
+  .hero { padding: 40px 20px 48px; }
+  .hero h1 { font-size: 28px; }
+  .info-grid, .concept-grid { grid-template-columns: 1fr; }
+  .sim-results { grid-template-columns: 1fr 1fr; }
+  .links-grid { grid-template-columns: 1fr; }
+  .container { padding: 20px 16px 60px; }
+  .scenario-detail { padding: 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ Top Bar ═══ -->
+<div class="topbar">
+  <svg viewBox="0 0 16 16"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>
+  <div class="sep"></div>
+  <span class="title">Copilot Usage-Based Billing</span>
+  <span class="badge">2026/6/1 新制</span>
+</div>
+
+<!-- ═══ Hero ═══ -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="tag">Copilot Business</div>
+    <h1>Usage-Based Billing<br>情境分析與管理要點</h1>
+    <p class="subtitle">以 10 位使用者、促銷期為例，解析 ULB / Org Budget / Enterprise Budget 的交互行為，並提供互動式成本模擬器。</p>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ═══ 前提假設 ═══ -->
+<div class="section-header" id="assumptions">
+  <div class="section-icon blue"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4 0a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V2a2 2 0 00-2-2H4zm1 3h6v1H5V3zm0 3h6v1H5V6zm0 3h4v1H5V9z"/></svg></div>
+  <h2>前提假設</h2>
+</div>
+<div class="info-grid">
+  <div class="card info-card">
+    <div class="label">方案</div>
+    <div class="value">Copilot Business</div>
+    <div class="note">Seat 月費 $19/user/month</div>
+  </div>
+  <div class="card info-card">
+    <div class="label">範例人數</div>
+    <div class="value"><span class="highlight">10</span> 位使用者</div>
+  </div>
+  <div class="card info-card">
+    <div class="label">Included AI Credits（促銷期 6/1–9/1）</div>
+    <div class="value"><span class="highlight">3,000</span> /user/month = $30/user</div>
+    <div class="note">標準期：1,900/user = $19/user</div>
+  </div>
+  <div class="card info-card">
+    <div class="label">Pool 總量（促銷期）</div>
+    <div class="value"><span class="highlight">30,000</span> credits = $300</div>
+    <div class="note">1 AI Credit = $0.01 USD</div>
+  </div>
+</div>
+<div class="callout info" style="margin-top:8px;">
+  <span class="callout-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a4.5 4.5 0 00-1.5 8.74V12.5a1.5 1.5 0 001.5 1.5h0a1.5 1.5 0 001.5-1.5V9.74A4.5 4.5 0 008 1zM6.5 15h3v1h-3v-1z"/></svg></span>
+  <span><strong>Code completions</strong> 與 <strong>next edit suggestions</strong> 不計入 AI Credits，維持無限制使用。</span>
+</div>
+
+<!-- ═══ 關鍵概念 ═══ -->
+<div class="section-header" id="concepts">
+  <div class="section-icon purple"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11.5 0a4.5 4.5 0 00-3.55 7.27L1 14.22V16h1.78l6.95-6.95A4.5 4.5 0 1011.5 0zm0 7a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg></div>
+  <h2>關鍵概念</h2>
+</div>
+<div class="concept-grid">
+  <div class="card concept-chip">
+    <div class="chip-title">AI Credits</div>
+    <div class="chip-desc">計費單位<br>1 credit = $0.01 USD</div>
+  </div>
+  <div class="card concept-chip">
+    <div class="chip-title">Pool（池）</div>
+    <div class="chip-desc">所有 seat 的 included credits 合併為共享池，非個人 bucket。新增 license 立即增加；移除於下帳期縮減</div>
+  </div>
+  <div class="card concept-chip">
+    <div class="chip-title">ULB</div>
+    <div class="chip-desc">User-Level Budget — 追蹤每人<strong>總消耗</strong>（pool + overage），到限即停。$0 = 完全無法使用</div>
+  </div>
+  <div class="card concept-chip">
+    <div class="chip-title">Org Budget</div>
+    <div class="chip-desc">控制 org 層級的 additional usage（超額）花費上限</div>
+  </div>
+  <div class="card concept-chip">
+    <div class="chip-title">Enterprise Budget</div>
+    <div class="chip-desc">控制整個 enterprise 超額花費上限，跨所有 org 的全局剎車</div>
+  </div>
+  <div class="card concept-chip">
+    <div class="chip-title">Stop usage 勾選</div>
+    <div class="chip-desc">Budget 上的「Stop usage when budget limit is reached」— 勾選才是 hard stop，未勾選只發 alert。Budget = $0 + 勾選 = 不允許超額</div>
+  </div>
+</div>
+
+<!-- ═══ 總結表 ═══ -->
+<div class="section-header" id="summary">
+  <div class="section-icon green"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M1 14h2V6H1v8zm4 0h2V2H5v12zm4 0h2V8H9v6zm4 0h2V4h-2v10z"/></svg></div>
+  <h2>總結表 — 點擊列查看詳情</h2>
+</div>
+<div class="summary-wrap">
+  <table class="summary-table" id="summaryTable">
+    <thead>
+      <tr><th>情境</th><th>ULB</th><th>Pool 共享</th><th>超額</th><th>最大額外費用</th><th>風險</th></tr>
+    </thead>
+    <tbody>
+      <tr data-tab="0" onclick="activateTab(0)">
+        <td>1 未設 ULB</td><td>無上限</td>
+        <td class="badge-yes">Yes</td><td class="badge-yes">Yes</td>
+        <td>依 budget</td><td><span class="risk-tag risk-high">一人吃光 pool</span></td>
+      </tr>
+      <tr data-tab="1" onclick="activateTab(1)">
+        <td>2 ULB = included</td><td>$30</td>
+        <td class="badge-no">No</td><td class="badge-no">No</td>
+        <td>$0</td><td><span class="risk-tag risk-med">無 pooling 優勢</span></td>
+      </tr>
+      <tr data-tab="2" onclick="activateTab(2)">
+        <td>3 ULB &gt; included</td><td>$40</td>
+        <td class="badge-yes">Yes</td><td class="badge-no">No</td>
+        <td>$0</td><td><span class="risk-tag risk-med">排擠他人</span></td>
+      </tr>
+      <tr data-tab="3" onclick="activateTab(3)">
+        <td>4 ULB + overage</td><td>$40</td>
+        <td class="badge-yes">Yes</td><td class="badge-yes">Yes (org)</td>
+        <td>$100</td><td><span class="risk-tag risk-low">可控</span></td>
+      </tr>
+      <tr data-tab="4" onclick="activateTab(4)">
+        <td>5 Enterprise</td><td>$40</td>
+        <td class="badge-yes">Yes</td><td class="badge-yes">Yes (org+ent)</td>
+        <td>$800</td><td><span class="risk-tag risk-high">全局剎車</span></td>
+      </tr>
+      <tr data-tab="5" onclick="activateTab(5)">
+        <td>6 差異化 ULB</td><td>Mixed</td>
+        <td class="badge-yes">Yes</td><td class="badge-yes">Yes ($0)</td>
+        <td>$0</td><td><span class="risk-tag risk-med">管理複雜</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══ 情境分析 ═══ -->
+<div class="section-header" id="scenarios">
+  <div class="section-icon blue"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11.5 7a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zm-.82 4.74a6.5 6.5 0 111.06-1.06l4.02 4.02-1.06 1.06-4.02-4.02z"/></svg></div>
+  <h2>情境分析</h2>
+</div>
+<div class="scenario-tabs" id="scenarioTabs">
+  <button class="tab-btn active" onclick="activateTab(0)">情境 1</button>
+  <button class="tab-btn" onclick="activateTab(1)">情境 2</button>
+  <button class="tab-btn" onclick="activateTab(2)">情境 3</button>
+  <button class="tab-btn" onclick="activateTab(3)">情境 4</button>
+  <button class="tab-btn" onclick="activateTab(4)">情境 5</button>
+  <button class="tab-btn" onclick="activateTab(5)">情境 6</button>
+</div>
+
+<!-- Panel 1 -->
+<div class="scenario-panel active" data-panel="0">
+  <div class="card scenario-detail">
+    <h3 style="margin-bottom:6px; color:var(--brand-70);">情境 1：未設定 ULB（預設值）</h3>
+    <p style="font-size:13px; color:var(--neutral-60); margin-bottom:16px;">沒有 per-user 上限 — 全靠 Pool 與 Org Budget 兑底控制</p>
+    <div class="setting-grid">
+      <div class="setting-item"><div class="s-label">ULB</div><div class="s-value">未設定</div><div class="s-sub">無個人上限</div></div>
+      <div class="setting-item"><div class="s-label">Credits/人</div><div class="s-value">無上限</div><div class="s-sub">受 Pool 限制</div></div>
+      <div class="setting-item"><div class="s-label">Org Budget</div><div class="s-value">$100</div><div class="s-sub">超額天花板</div></div>
+      <div class="setting-item"><div class="s-label">最大總容量</div><div class="s-value">40,000</div><div class="s-sub">30,000 + $100 overage</div></div>
+    </div>
+    <ul class="behavior-list">
+      <li>任一使用者可消耗大量 Pool，無個人上限</li>
+      <li>一個 power user 使用 agent mode 跑整天，可能吃掉大部分 Pool</li>
+      <li>Pool 耗盡後，依 Org Budget 允許最多 $100 overage</li>
+      <li><strong>關鍵風險：</strong>缺乏個人消耗控制，難以預測個別使用者行為</li>
+      <li><strong>月費試算：</strong>$190 (seats) + 最多 $100 (overage) = <strong>$290</strong></li>
+    </ul>
+    <div class="callout risk">
+      <span class="callout-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="var(--red-primary)"><path d="M8 1L0 15h16L8 1zm0 3.5l5.25 9.5H2.75L8 4.5zM7 7v4h2V7H7zm0 5v2h2v-2H7z"/></svg></span>
+      <span><strong>適用場景：</strong>小團隊、高信任度環境。不建議用於大型組織。</span>
+    </div>
+  </div>
+</div>
+
+<!-- Panel 2 -->
+<div class="scenario-panel" data-panel="1">
+  <div class="card scenario-detail">
+    <h3 style="margin-bottom:6px; color:var(--brand-70);">情境 2：ULB = $30, Org Budget = $0</h3>
+    <p style="font-size:13px; color:var(--neutral-60); margin-bottom:16px;">ULB 等於 Included — 完全不可用到別人的 Pool</p>
+    <div class="setting-grid">
+      <div class="setting-item"><div class="s-label">ULB</div><div class="s-value">$30</div><div class="s-sub">= Included</div></div>
+      <div class="setting-item"><div class="s-label">Credits/人</div><div class="s-value">3,000</div><div class="s-sub">等同個人 bucket</div></div>
+      <div class="setting-item"><div class="s-label">Org Budget</div><div class="s-value">$0</div><div class="s-sub">禁止超額</div></div>
+      <div class="setting-item"><div class="s-label">最大總容量</div><div class="s-value">30,000</div><div class="s-sub">10 × 3,000，無 overage</div></div>
+    </div>
+    <ul class="behavior-list">
+      <li>每位使用者從 Pool 取用，上限 3,000 credits</li>
+      <li>即使 User A 只用 1,000，User B <strong>仍被 ULB 卡在 3,000</strong>，無法取用多餘的</li>
+      <li><strong>Pooling 效果被消除</strong>：等於每人独立 bucket，浪費共享潛力</li>
+      <li>Pool 可能有剩餘但無人能取用</li>
+      <li><strong>月費試算：</strong>$190 (seats) + $0 (overage) = <strong>$190</strong></li>
+    </ul>
+    <div class="callout warn">
+      <span class="callout-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="var(--yellow-primary)"><path d="M8 1L0 15h16L8 1zm0 3.5l5.25 9.5H2.75L8 4.5zM7 7v4h2V7H7zm0 5v2h2v-2H7z"/></svg></span>
+      <span><strong>適用場景：</strong>需嚴格控制成本不超額、使用量平均的組織。不建議使用量差異大的團隊。</span>
+    </div>
+  </div>
+</div>
+
+<!-- Panel 3 -->
+<div class="scenario-panel" data-panel="2">
+  <div class="card scenario-detail">
+    <h3 style="margin-bottom:6px; color:var(--brand-70);">情境 3：ULB = $40, Org Budget = $0</h3>
+    <p style="font-size:13px; color:var(--neutral-60); margin-bottom:16px;">ULB 高於 Included — 可共享 Pool，但無超額</p>
+    <div class="setting-grid">
+      <div class="setting-item"><div class="s-label">ULB</div><div class="s-value">$40</div><div class="s-sub">&gt; Included</div></div>
+      <div class="setting-item"><div class="s-label">Credits/人</div><div class="s-value">4,000</div><div class="s-sub">個人上限</div></div>
+      <div class="setting-item"><div class="s-label">Org Budget</div><div class="s-value">$0</div><div class="s-sub">禁止超額</div></div>
+      <div class="setting-item"><div class="s-label">最大總容量</div><div class="s-value">30,000</div><div class="s-sub">受 Pool 限制</div></div>
+    </div>
+    <ul class="behavior-list">
+      <li>每人上限 4,000，但 Pool 只有 30,000</li>
+      <li>Power user 可從 Pool 取超過 3,000（最多 4,000），前提是其他人用得少</li>
+      <li>Pool 耗盡後 → 所有人 block（Org Budget = $0）</li>
+      <li>即使某使用者 ULB 還沒到 4,000，Pool 空了就停</li>
+      <li><strong>月費試算：</strong>$190 (seats) + $0 (overage) = <strong>$190</strong></li>
+    </ul>
+    <div class="callout warn">
+      <span class="callout-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="var(--yellow-primary)"><path d="M8 1L0 15h16L8 1zm0 3.5l5.25 9.5H2.75L8 4.5zM7 7v4h2V7H7zm0 5v2h2v-2H7z"/></svg></span>
+      <span><strong>風險：</strong>一個 power user 大量消耗可能導致其他人提前被 block。適用於成本限制嚴格但願意允許靈活分配的團隊。</span>
+    </div>
+  </div>
+</div>
+
+<!-- Panel 4 -->
+<div class="scenario-panel" data-panel="3">
+  <div class="card scenario-detail">
+    <h3 style="margin-bottom:6px; color:var(--brand-70);">情境 4：ULB = $40, Org Budget = $100</h3>
+    <p style="font-size:13px; color:var(--neutral-60); margin-bottom:16px;">共享 Pool + 超額預算 — 最常見、推薦配法</p>
+    <div class="setting-grid">
+      <div class="setting-item"><div class="s-label">ULB</div><div class="s-value">$40</div><div class="s-sub">&gt; Included</div></div>
+      <div class="setting-item"><div class="s-label">Credits/人</div><div class="s-value">4,000</div><div class="s-sub">個人上限</div></div>
+      <div class="setting-item"><div class="s-label">Org Budget</div><div class="s-value">$100</div><div class="s-sub">超額天花板</div></div>
+      <div class="setting-item"><div class="s-label">最大總容量</div><div class="s-value">40,000</div><div class="s-sub">30,000 + 10,000 overage</div></div>
+    </div>
+    <ul class="behavior-list">
+      <li>Pool 共享使用，每人上限 4,000</li>
+      <li>Pool 耗盡後 → Additional usage 啟動，Org 最多再花 $100</li>
+      <li>總容量 = 30,000（pool）+ 10,000（overage）= <strong>40,000 credits</strong></li>
+      <li>10 × 4,000 ULB = 40,000，ULB 與 Pool+Budget 數字完美對齊</li>
+      <li><strong>月費試算：</strong>$190 (seats) + $100 (overage) = <strong>$290</strong></li>
+    </ul>
+    <div class="callout tip">
+      <span class="callout-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="var(--green-primary)"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zm3.78 5.28l-4.5 5.5a.75.75 0 01-1.12.04l-2.5-2.5a.75.75 0 111.06-1.06l1.92 1.92 3.96-4.84a.75.75 0 111.18.94z"/></svg></span>
+      <span><strong>推薦：</strong>允許彈性但設天花板，適合大多數團隊。</span>
+    </div>
+  </div>
+</div>
+
+<!-- Panel 5 -->
+<div class="scenario-panel" data-panel="4">
+  <div class="card scenario-detail">
+    <h3 style="margin-bottom:6px; color:var(--brand-70);">情境 5：Enterprise 多 Org + Enterprise Budget</h3>
+    <p style="font-size:13px; color:var(--neutral-60); margin-bottom:16px;">Org A (25 人) + Org B (25 人)，ULB $40，各 Org Budget $500，Enterprise Budget $800 為全局剎車</p>
+    <div class="setting-grid">
+      <div class="setting-item"><div class="s-label">ULB</div><div class="s-value">$40</div><div class="s-sub">/人，各 Org 適用</div></div>
+      <div class="setting-item"><div class="s-label">Org A / B Budget</div><div class="s-value">$500</div><div class="s-sub">各 Org 超額上限</div></div>
+      <div class="setting-item"><div class="s-label">Enterprise Budget</div><div class="s-value">$800</div><div class="s-sub">&lt; 兩 Org 加總 $1,000</div></div>
+      <div class="setting-item"><div class="s-label">最大超額費用</div><div class="s-value">$800</div><div class="s-sub">由 Enterprise Budget 收斂</div></div>
+    </div>
+    <ul class="behavior-list">
+      <li>每個 Org 各自 25 人 × ULB $40 → 每人最多 $40，每 Org overage 上限為 Org Budget $500（&lt; ULB×seats $1,000）</li>
+      <li>Overage 消耗<strong>同時</strong>計入 Org Budget 和 Enterprise Budget</li>
+      <li>Org A 用完 $500 → Org A 被 block，Org B 不受影響</li>
+      <li>Enterprise Budget 到 $800 → <strong>所有 Org 立刻被 block</strong>，即使 Org B 自己的 $500 還沒花完（這就是「全局剎車」效果）</li>
+      <li><strong>月費試算：</strong>seats + 最多 $800 overage（Enterprise Budget &lt; Σ Org Budget 才有實際剎車效果）</li>
+    </ul>
+    <div class="callout risk">
+      <span class="callout-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="var(--red-primary)"><path d="M8 1L0 15h16L8 1zm0 3.5l5.25 9.5H2.75L8 4.5zM7 7v4h2V7H7zm0 5v2h2v-2H7z"/></svg></span>
+      <span><strong>關鍵風險：</strong>若 Enterprise Budget ≥ 各 Org Budget 加總，它就只是裝飾品；若 &lt; 加總值，Org A 大量消耗會擠壓 Org B 可用額度。</span>
+    </div>
+  </div>
+</div>
+
+<!-- Panel 6 -->
+<div class="scenario-panel" data-panel="5">
+  <div class="card scenario-detail">
+    <h3 style="margin-bottom:6px; color:var(--brand-70);">情境 6：不同人不同 ULB</h3>
+    <p style="font-size:13px; color:var(--neutral-60); margin-bottom:16px;">差異化配置 — 最靈活，但管理複雜度最高</p>
+    <div class="setting-grid">
+      <div class="setting-item"><div class="s-label">Senior × 2</div><div class="s-value">$60</div><div class="s-sub">6,000 credits/人</div></div>
+      <div class="setting-item"><div class="s-label">Junior × 8</div><div class="s-value">$20</div><div class="s-sub">2,000 credits/人</div></div>
+      <div class="setting-item"><div class="s-label">Org Budget</div><div class="s-value">$0</div><div class="s-sub">兜底，禁止任何超額</div></div>
+      <div class="setting-item"><div class="s-label">ULB 加總</div><div class="s-value">28,000</div><div class="s-sub">&lt; Pool 30,000，無超額空間</div></div>
+    </div>
+    <ul class="behavior-list">
+      <li>所有人從同一 Pool（30,000）取用</li>
+      <li>Senior dev 可使用更多 credits（上限 6,000），Junior 受限較嚴（上限 2,000）</li>
+      <li>ULB 加總（28,000）&lt; Pool（30,000）：即使所有人都達上限仍不會超出 Pool，Org Budget = $0 即可安全兜底</li>
+      <li>設計進階：有明確角色分工的大型團隊，讓核心開發者有更多資源</li>
+      <li><strong>月費試算：</strong>$190 (seats) + $0 (overage) = <strong>$190</strong>（固定，無超額風險）</li>
+    </ul>
+    <div class="callout info">
+      <span class="callout-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a4.5 4.5 0 00-1.5 8.74V12.5a1.5 1.5 0 001.5 1.5h0a1.5 1.5 0 001.5-1.5V9.74A4.5 4.5 0 008 1zM6.5 15h3v1h-3v-1z"/></svg></span>
+      <span><strong>適用場景：</strong>有明確角色分工的大型團隊。需定期 review 個人使用量，動態調整。</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 互動式成本模擬器 ═══ -->
+<div class="section-header" id="sim-section">
+  <div class="section-icon green"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 1a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V2a1 1 0 00-1-1H2zm1 2h10v2H3V3zm0 4h2v2H3V7zm4 0h2v2H7V7zm4 0h2v2h-2V7zM3 11h2v2H3v-2zm4 0h2v2H7v-2zm4 0h2v2h-2v-2z"/></svg></div>
+  <h2>互動式成本模擬器</h2>
+</div>
+<div class="card simulator">
+  <div class="sim-title">調整參數，即時查看成本影響</div>
+  <div class="sim-controls">
+    <div class="sim-field">
+      <label>使用者人數</label>
+      <input type="range" id="simUsers" min="1" max="100" value="10" oninput="updateSim()">
+      <div class="range-val" id="simUsersVal">10</div>
+    </div>
+    <div class="sim-field">
+      <label>ULB（$/user）</label>
+      <input type="range" id="simUlb" min="0" max="100" value="40" oninput="updateSim()">
+      <div class="range-val" id="simUlbVal">$40</div>
+    </div>
+    <div class="sim-field">
+      <label>Org Budget（$）</label>
+      <input type="range" id="simOrgBudget" min="0" max="2000" step="50" value="100" oninput="updateSim()">
+      <div class="range-val" id="simOrgBudgetVal">$100</div>
+    </div>
+    <div class="sim-field">
+      <label>每人 Included Credits</label>
+      <input type="range" id="simIncluded" min="1900" max="7000" step="100" value="3000" oninput="updateSim()">
+      <div class="range-val" id="simIncludedVal">3,000</div>
+    </div>
+  </div>
+  <div class="sim-results">
+    <div class="sim-result-card">
+      <div class="r-label">Pool 總量</div>
+      <div class="r-value blue" id="resPool">30,000</div>
+      <div class="r-sub">credits</div>
+    </div>
+    <div class="sim-result-card">
+      <div class="r-label">Seat 月費</div>
+      <div class="r-value green" id="resSeat">$190</div>
+      <div class="r-sub">$19 × users</div>
+    </div>
+    <div class="sim-result-card">
+      <div class="r-label">最大 Overage</div>
+      <div class="r-value red" id="resOverage">$100</div>
+      <div class="r-sub">org budget</div>
+    </div>
+    <div class="sim-result-card">
+      <div class="r-label">最差月費總計</div>
+      <div class="r-value purple" id="resTotal">$290</div>
+      <div class="r-sub">seats + overage</div>
+    </div>
+  </div>
+  <div style="margin-top:16px; font-size:12px; color:var(--neutral-60);">
+    <strong>Pool 共享效果：</strong>
+    <span id="resPooling">ULB ($40) &gt; Included ($30) → Pool 可共享，power user 可取用更多</span>
+  </div>
+</div>
+
+<!-- ═══ 管理要點 ═══ -->
+<div class="section-header" id="requirements">
+  <div class="section-icon yellow"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a1.6 1.6 0 00-.8.22L1.6 3.78A1.6 1.6 0 000 5.14v5.72a1.6 1.6 0 00.8 1.36l5.6 3.56A1.6 1.6 0 008 16a1.6 1.6 0 00.8-.22l5.6-3.56a1.6 1.6 0 00.8-1.36V5.14a1.6 1.6 0 00-.8-1.36L8.8.22A1.6 1.6 0 008 0zm0 5a3 3 0 110 6 3 3 0 010-6z"/></svg></div>
+  <h2>管理要點</h2>
+</div>
+<div class="req-grid">
+  <div class="card req-card">
+    <span class="req-num">1</span>
+    <h4>務必勾選「Stop usage when budget limit is reached」</h4>
+    <p>設定 budget 時，必須勾選此選項才能 hard stop。</p>
+    <div class="req-danger">若未勾選，budget 只是 alert，不會阻止 usage，可能導致帳單超出預期。這是最常見的管理疏忽。</div>
+    <div class="ref-links">
+      <a class="ref-link" href="https://docs.github.com/en/billing/how-tos/set-up-budgets" target="_blank">Setting up budgets</a>
+      <a class="ref-link" href="https://docs.github.com/en/billing/concepts/budgets-and-alerts#stopping-usage" target="_blank">Stopping usage</a>
+    </div>
+  </div>
+  <div class="card req-card">
+    <span class="req-num">2</span>
+    <h4>用 Budget 金額來控制是否允許超額</h4>
+    <p>新版 GitHub Billing UI 沒有獨立的「Additional usage allowed / not allowed」開關，這個控制已經整合到 <strong>Budget 設定</strong>裡。實際決定行為的是「Budget 金額」加上「Stop usage when budget limit is reached」勾選框：</p>
+    <ul style="margin:10px 0; padding-left:20px; font-size:14px; color:var(--neutral-80);">
+      <li><strong>Budget = $0 + Stop usage 勾選</strong>：等同「Not allowed」— Pool 用完就全停</li>
+      <li><strong>Budget &gt; $0 + Stop usage 勾選</strong>：等同「Allowed up to budget」— Pool 用完後繼續使用，費用依 published rates 計算，到 budget 上限就 hard stop</li>
+      <li><strong>Stop usage 未勾選</strong>：Pool 用完後無上限超額，budget 只發 email 警示，<span style="color:var(--red-primary);">不建議</span></li>
+      <li><strong>沒設 Budget</strong>：依 plan 預設行為（Business/Enterprise 預設不允許超額；個人 Pro 帳號預設行為依 GitHub plan 條款）</li>
+    </ul>
+    <div class="ref-links">
+      <a class="ref-link" href="https://docs.github.com/en/billing/how-tos/set-up-budgets" target="_blank">Set up budgets</a>
+      <a class="ref-link" href="https://docs.github.com/en/copilot/concepts/billing/usage-based-billing-for-organizations-and-enterprises#what-happens-if-i-exceed-my-included-ai-credits" target="_blank">Exceed included credits</a>
+    </div>
+  </div>
+  <div class="card req-card">
+    <span class="req-num">3</span>
+    <h4>啟用 Included Usage Alerts</h4>
+    <p>可在 Budgets &amp; Alerts 頁面啟用 included usage alerts：</p>
+    <ul style="margin:10px 0; padding-left:20px; font-size:14px; color:var(--neutral-80);">
+      <li>Pool 到 <strong>90%</strong> 和 <strong>100%</strong> 時寄 email 通知</li>
+      <li>這和 budget alerts 是<strong>不同的機制</strong>：一個追蹤 included usage 消耗比例，一個追蹤 dollar budget</li>
+      <li><strong>建議兩者都啟用</strong></li>
+    </ul>
+    <div class="ref-links">
+      <a class="ref-link" href="https://docs.github.com/en/billing/concepts/budgets-and-alerts#included-usage-alerts" target="_blank">Included usage alerts</a>
+      <a class="ref-link" href="https://docs.github.com/en/billing/how-tos/set-up-budgets#managing-included-usage-alerts" target="_blank">Managing alerts</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 相關連結 ═══ -->
+<div class="section-header" id="links">
+  <div class="section-icon purple"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M7.78 0a.75.75 0 01.53.22l3.47 3.47a.75.75 0 010 1.06L8.53 8l3.25 3.25a.75.75 0 010 1.06l-3.47 3.47a.75.75 0 01-1.06 0L4 12.53l-3.25 3.25a.75.75 0 01-1.06-1.06L2.94 11.47.22 8.75a.75.75 0 010-1.06L3.69 4.22.22 1.28A.75.75 0 011.28.22L4 2.94 7.25.22A.75.75 0 017.78 0z"/></svg></div>
+  <h2>相關連結</h2>
+</div>
+<div class="links-grid">
+  <a class="card link-card" href="https://docs.github.com/en/copilot/concepts/billing/usage-based-billing-for-organizations-and-enterprises" target="_blank">
+    <div class="lc-title">Usage-Based Billing 主頁</div>
+    <div class="lc-desc">Organizations 與 Enterprises 的 usage-based billing 完整說明</div>
+  </a>
+  <a class="card link-card" href="https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing" target="_blank">
+    <div class="lc-title">Models and Pricing</div>
+    <div class="lc-desc">各模型的 per-token 定價與 AI Credits 計算方式</div>
+  </a>
+  <a class="card link-card" href="https://docs.github.com/en/billing/how-tos/set-up-budgets" target="_blank">
+    <div class="lc-title">設定 Budget</div>
+    <div class="lc-desc">建立 product/SKU/bundled budget 與設定 Stop usage</div>
+  </a>
+  <a class="card link-card" href="https://docs.github.com/en/billing/concepts/budgets-and-alerts" target="_blank">
+    <div class="lc-title">Budget 概念與 Alerts</div>
+    <div class="lc-desc">Budget 類型、scope、stopping usage、included usage alerts</div>
+  </a>
+  <a class="card link-card" href="https://docs.github.com/en/copilot/how-tos/manage-and-track-spending/prepare-for-usage-based-billing" target="_blank">
+    <div class="lc-title">準備轉換指南</div>
+    <div class="lc-desc">從 request-based 轉 usage-based billing 的準備步驟</div>
+  </a>
+  <a class="card link-card" href="https://docs.github.com/en/copilot/concepts/billing/usage-based-billing-for-organizations-and-enterprises#what-happens-if-i-exceed-my-included-ai-credits" target="_blank">
+    <div class="lc-title">Pool 耗盡行為</div>
+    <div class="lc-desc">Included credits 用完後的兩種行為模式</div>
+  </a>
+  <a class="card link-card" href="https://docs.github.com/en/copilot/concepts/billing/usage-based-billing-for-organizations-and-enterprises#how-can-i-control-costs-with-budgets" target="_blank">
+    <div class="lc-title">Budget 控制層級</div>
+    <div class="lc-desc">Enterprise / Org / Cost Center / User 四層 budget 說明</div>
+  </a>
+  <a class="card link-card" href="https://docs.github.com/en/billing/concepts/budgets-and-alerts#included-usage-alerts" target="_blank">
+    <div class="lc-title">Included Usage Alerts</div>
+    <div class="lc-desc">Pool 消耗 90%/100% 的 email 通知機制</div>
+  </a>
+  <a class="card link-card" href="https://docs.github.com/en/billing/concepts/budgets-and-alerts#stopping-usage" target="_blank">
+    <div class="lc-title">Stopping Usage</div>
+    <div class="lc-desc">勾選「Stop usage when budget limit is reached」的行為說明</div>
+  </a>
+</div>
+
+</div>
+
+<!-- ═══ JavaScript ═══ -->
+<script>
+function activateTab(index) {
+  document.querySelectorAll('.tab-btn').forEach(function(btn, i) {
+    btn.classList.toggle('active', i === index);
+  });
+  document.querySelectorAll('.scenario-panel').forEach(function(panel, i) {
+    panel.classList.toggle('active', i === index);
+  });
+  document.querySelectorAll('.summary-table tbody tr').forEach(function(row, i) {
+    row.classList.toggle('active', i === index);
+  });
+  var scenarioSection = document.getElementById('scenarios');
+  var rect = scenarioSection.getBoundingClientRect();
+  if (rect.top > window.innerHeight || rect.bottom < 0) {
+    scenarioSection.scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+function updateSim() {
+  var users = +document.getElementById('simUsers').value;
+  var ulb = +document.getElementById('simUlb').value;
+  var orgBudget = +document.getElementById('simOrgBudget').value;
+  var included = +document.getElementById('simIncluded').value;
+
+  var pool = users * included;
+  var seatCost = users * 19;
+  var totalMax = seatCost + orgBudget;
+  var includedPerUserDollar = included / 100;
+
+  document.getElementById('simUsersVal').textContent = users;
+  document.getElementById('simUlbVal').textContent = '$' + ulb;
+  document.getElementById('simOrgBudgetVal').textContent = '$' + orgBudget.toLocaleString();
+  document.getElementById('simIncludedVal').textContent = included.toLocaleString();
+
+  document.getElementById('resPool').textContent = pool.toLocaleString();
+  document.getElementById('resSeat').textContent = '$' + seatCost.toLocaleString();
+  document.getElementById('resOverage').textContent = '$' + orgBudget.toLocaleString();
+  document.getElementById('resTotal').textContent = '$' + totalMax.toLocaleString();
+
+  var poolingEl = document.getElementById('resPooling');
+  if (ulb === 0) {
+    poolingEl.textContent = 'ULB = $0 → 使用者完全無法使用 Copilot';
+  } else if (ulb < includedPerUserDollar) {
+    poolingEl.textContent = 'ULB ($' + ulb + ') < Included ($' + includedPerUserDollar + ') → 每人限制低於 included，pool 效果被消除且有剩餘';
+  } else if (ulb === includedPerUserDollar) {
+    poolingEl.textContent = 'ULB ($' + ulb + ') = Included ($' + includedPerUserDollar + ') → Pool 效果被消除，等同個人 bucket';
+  } else {
+    poolingEl.textContent = 'ULB ($' + ulb + ') > Included ($' + includedPerUserDollar + ') → Pool 可共享，power user 可取用更多';
+  }
+}
+
+updateSim();
+activateTab(0);
+</script>
+
+</body>
+</html>
