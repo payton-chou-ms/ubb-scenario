@@ -525,6 +525,7 @@ var I18N = {
     note_top_model: 'Top model family: {model} ({pct} of spend).',
     note_top_org: 'Top organization: {org} ({pct} of spend).',
     note_quota: '{n} rows contain quota/limit notes.',
+    note_unlicensed: 'Excluded {rows} rows from {users} unlicensed user(s) (total_monthly_quota = 0, {amount}). Matches GitHub Billing Preview which counts only licensed seats.',
     th_description: 'Description',
     th_sample: 'Sample value',
     sec_trends: 'Trends',
@@ -639,6 +640,7 @@ var I18N = {
     note_top_model: '\u4E3B\u8981\u6A21\u578B\u5BB6\u65CF\uFF1A{model}\uFF08\u4F54 {pct}\uFF09\u3002',
     note_top_org: '\u4E3B\u8981\u7D44\u7E54\uFF1A{org}\uFF08\u4F54 {pct}\uFF09\u3002',
     note_quota: '\u5171 {n} \u7B46\u8CC7\u6599\u5305\u542B\u914D\u984D/\u9650\u5236\u8A3B\u8A18\u3002',
+    note_unlicensed: '\u5DF2\u6392\u9664 {rows} \u7B46\u4F86\u81EA {users} \u4F4D\u7121\u6388\u6B0A\u4F7F\u7528\u8005\u7684\u8A18\u9304\uFF08total_monthly_quota = 0\uFF0C{amount}\uFF09\u3002\u6B64\u908F\u8F2F\u8207 GitHub \u5B98\u65B9 Billing Preview \u4E00\u81F4\uFF0C\u53EA\u8A08\u7B97\u6709\u6388\u6B0A\u5E2D\u4F4D\u7684\u4F7F\u7528\u8005\u3002',
     th_description: '\u8AAA\u660E',
     th_sample: '\u7BC4\u4F8B\u503C',
     sec_trends: '\u8DA8\u52E2\u5206\u6790',
@@ -977,10 +979,14 @@ function analyze(rows, headers) {
   var cOrg   = pickCol(headers, ['organization','Owner','Organization','owner']);
   var cDate  = pickCol(headers, ['Usage at','date','Date','Timestamp']);
   var cNote  = pickCol(headers, ['exceeds_quota','Note','note']);
+  var cQuota = pickCol(headers, ['total_monthly_quota','quota','monthly_quota','Total Monthly Quota']);
 
   var byUser = {}, byDay = {}, byDayUsers = {}, byModel = {}, byFamily = {}, byOrg = {};
   var total = 0, quotaHits = 0;
-  var i, r, u, cost, qty, mdl, org, note, day, fam;
+  // Unlicensed (total_monthly_quota=0) bucket: tracked separately, excluded from headlines
+  // to match GitHub's official Billing Preview behavior.
+  var unlicensedUsers = {}, unlicensedTotal = 0, unlicensedRows = 0;
+  var i, r, u, cost, qty, mdl, org, note, day, fam, quotaVal, isLicensedRow;
   for (i = 0; i < rows.length; i++) {
     r = rows[i];
     u = (cUser ? r[cUser] : 'unknown') || 'unknown';
@@ -991,6 +997,24 @@ function analyze(rows, headers) {
     note = (cNote ? r[cNote] : '') || '';
     day = '';
     if (cDate && r[cDate]) { day = String(r[cDate]).slice(0, 10); }
+
+    // A row is "licensed" only when total_monthly_quota is present and > 0.
+    // Rows with quota=0 represent activity from users without an active seat
+    // (former users, transient access, etc.) and are excluded from billing headlines.
+    if (cQuota) {
+      quotaVal = parseFloat(r[cQuota]);
+      isLicensedRow = !isNaN(quotaVal) && quotaVal > 0;
+    } else {
+      isLicensedRow = true;
+    }
+
+    if (!isLicensedRow) {
+      unlicensedUsers[u] = 1;
+      unlicensedTotal += cost;
+      unlicensedRows++;
+      continue;
+    }
+
     if (!byUser[u]) byUser[u] = {user:u, org:org, aic:0, pru:0};
     byUser[u].aic += cost;
     byUser[u].pru += qty;
@@ -1014,13 +1038,22 @@ function analyze(rows, headers) {
   var dates = Object.keys(byDay).sort();
   var byDayUserCount = {};
   for (var d in byDayUsers) byDayUserCount[d] = Object.keys(byDayUsers[d]).length;
+  // Users that are unlicensed-only (never appear in any licensed row).
+  var unlicensedOnlyCount = 0;
+  for (var uu in unlicensedUsers) { if (!byUser[uu]) unlicensedOnlyCount++; }
   return {
     total: total, quotaHits: quotaHits, userCount: userArr.length,
     modelCount: Object.keys(byModel).length,
     dateRange: [dates[0] || '', dates[dates.length - 1] || ''],
     byDay: byDay, byDayUsers: byDayUserCount,
     byModel: byModel, byFamily: byFamily, byOrg: byOrg, userArr: userArr,
-    cols: {cUser:cUser, cCost:cCost, cQty:cQty, cModel:cModel, cOrg:cOrg, cDate:cDate, cNote:cNote}
+    unlicensed: {
+      total: unlicensedTotal,
+      rows: unlicensedRows,
+      usersOnly: unlicensedOnlyCount,
+      detected: !!cQuota
+    },
+    cols: {cUser:cUser, cCost:cCost, cQty:cQty, cModel:cModel, cOrg:cOrg, cDate:cDate, cNote:cNote, cQuota:cQuota}
   };
 }
 
@@ -1071,6 +1104,16 @@ function renderOverview() {
 function renderOverviewNotes() {
   var s = state.stats;
   var notes = [];
+  // Highlight unlicensed (total_monthly_quota=0) activity that is excluded from headlines.
+  // This matches GitHub's official Billing Preview, which counts only licensed seats.
+  if (s.unlicensed && s.unlicensed.detected && s.unlicensed.rows > 0) {
+    notes.push(
+      t('note_unlicensed')
+        .replace('{rows}', fmtInt(s.unlicensed.rows))
+        .replace('{users}', fmtInt(s.unlicensed.usersOnly))
+        .replace('{amount}', fmtDollar(s.unlicensed.total))
+    );
+  }
   var topUser = s.userArr[0];
   if (topUser) {
     notes.push(t('note_top_user').replace('{user}', topUser.user).replace('{pct}', pct(topUser.aic, s.total)));
