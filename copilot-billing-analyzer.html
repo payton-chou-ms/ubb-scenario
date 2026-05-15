@@ -1,0 +1,1745 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Copilot Billing Analyzer</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+:root{
+  --ink:#171717;--body:#4d4d4d;--mute:#888;--hair:#ebebeb;
+  --canvas:#ffffff;--canvas-soft:#fafafa;--link:#0070f3;
+  --error:#ee0000;--warn:#f5a623;--violet:#7928ca;--cyan:#50e3c2;--pink:#ff0080;
+  --radius-sm:6px;--radius-md:8px;--radius-lg:12px;--pill:100px;
+  --shadow-card:0 0 0 1px var(--hair),0 1px 2px rgba(0,0,0,.04);
+  --shadow-card-hover:0 0 0 1px #d6d6d6,0 4px 16px rgba(0,0,0,.06);
+  --max:1400px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--canvas);color:var(--body);
+  font-family:'Inter','Geist',ui-sans-serif,system-ui,-apple-system,sans-serif;
+  font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline}
+h1,h2,h3,h4{color:var(--ink);font-weight:600;letter-spacing:-0.02em;margin:0}
+h1{font-size:48px;line-height:1.05;letter-spacing:-0.05em;font-weight:600}
+h2{font-size:32px;line-height:1.15;letter-spacing:-0.04em}
+h3{font-size:20px;line-height:1.25;letter-spacing:-0.02em}
+h4{font-size:14px;line-height:1.3;letter-spacing:-0.01em}
+code,.mono{font-family:'JetBrains Mono','Geist Mono',ui-monospace,SFMono-Regular,Menlo,monospace}
+.eyebrow{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--mute);margin-bottom:12px;display:block}
+.container{max-width:var(--max);margin:0 auto;padding:0 24px}
+@media(max-width:720px){.container{padding:0 16px}}
+
+.nav{position:sticky;top:0;background:rgba(255,255,255,.85);backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid var(--hair);z-index:50}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--ink);font-weight:600;font-size:15px;letter-spacing:-0.01em}
+.brand-dot{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,#171717,#404040)}
+.nav-actions{display:flex;gap:8px;align-items:center}
+
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid transparent;
+  font-family:inherit;font-size:14px;font-weight:500;line-height:1;padding:10px 16px;border-radius:var(--radius-sm);
+  cursor:pointer;transition:all .15s ease;background:none;color:inherit;text-decoration:none}
+.btn-pill{border-radius:var(--pill);padding:12px 22px;font-size:14px}
+.btn-primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn-primary:hover{background:#000}
+.btn-secondary{background:var(--canvas);color:var(--ink);border-color:var(--hair)}
+.btn-secondary:hover{border-color:#d6d6d6;background:var(--canvas-soft)}
+.btn-ghost{background:transparent;color:var(--ink)}
+.btn-ghost:hover{background:var(--canvas-soft)}
+.btn-sm{font-size:12px;padding:6px 12px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+
+.hero{position:relative;overflow:hidden;border-bottom:1px solid var(--hair)}
+.hero-mesh{position:absolute;inset:0;z-index:0;opacity:.55;
+  background:
+    radial-gradient(900px 500px at 12% 8%,rgba(0,124,240,.22),transparent 60%),
+    radial-gradient(800px 480px at 88% 18%,rgba(0,223,216,.22),transparent 60%),
+    radial-gradient(700px 420px at 30% 88%,rgba(121,40,202,.18),transparent 60%),
+    radial-gradient(700px 420px at 78% 80%,rgba(255,0,128,.16),transparent 60%);
+  filter:blur(30px)}
+.hero-inner{position:relative;z-index:1;padding:80px 0 64px}
+.hero h1{max-width:880px}
+.hero h1 .accent{background:linear-gradient(90deg,#007cf0,#7928ca);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.lede{font-size:18px;color:var(--body);margin:20px 0 28px;max-width:680px}
+.hero-cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+
+section.block{padding:64px 0;border-bottom:1px solid var(--hair)}
+section.block:last-of-type{border-bottom:none}
+.section-head{margin-bottom:32px;max-width:760px}
+.section-head h2{margin-bottom:8px}
+.section-head p{color:var(--body);font-size:16px;margin:0}
+
+.card{background:var(--canvas);border:1px solid var(--hair);border-radius:var(--radius-md);
+  padding:24px;transition:border-color .15s ease,box-shadow .15s ease}
+.card.elev{box-shadow:var(--shadow-card)}
+.card-lg{padding:32px;border-radius:var(--radius-lg)}
+.grid{display:grid;gap:16px}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:980px){.grid-3,.grid-4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+
+.upload-zone{border:1px dashed #d4d4d4;border-radius:var(--radius-md);padding:48px 24px;text-align:center;
+  background:var(--canvas-soft);transition:all .15s ease;cursor:pointer}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--ink);background:#f5f5f5}
+.upload-zone h3{margin-bottom:6px}
+.upload-zone p{margin:0 0 16px;color:var(--mute);font-size:14px}
+.upload-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+
+.kpi{padding:20px 22px;background:var(--canvas);border:1px solid var(--hair);border-radius:var(--radius-md)}
+.kpi .label{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--mute);margin-bottom:8px}
+.kpi .value{font-size:28px;font-weight:600;color:var(--ink);letter-spacing:-0.02em}
+.kpi .delta{font-size:12px;color:var(--mute);margin-top:4px}
+
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--hair);vertical-align:top}
+th{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--mute);background:var(--canvas-soft);font-weight:500}
+tr:hover td{background:var(--canvas-soft)}
+.table-wrap{overflow-x:auto;border:1px solid var(--hair);border-radius:var(--radius-md)}
+
+.chart-box{position:relative;height:300px}
+.chart-box.tall{height:380px}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+
+input[type=text],input[type=number],select{font-family:inherit;font-size:14px;padding:9px 12px;
+  border:1px solid var(--hair);border-radius:var(--radius-sm);background:var(--canvas);color:var(--ink);width:100%}
+input:focus,select:focus{outline:none;border-color:var(--ink)}
+label.field{display:block;font-size:12px;color:var(--mute);font-family:'JetBrains Mono',monospace;
+  letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+input[type=range]{width:100%}
+
+.ulb-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+@media(max-width:860px){.ulb-grid{grid-template-columns:1fr}}
+.ulb-stat{display:flex;justify-content:space-between;align-items:baseline;padding:14px 0;border-bottom:1px solid var(--hair)}
+.ulb-stat:last-child{border-bottom:none}
+.ulb-stat .k{font-size:13px;color:var(--body)}
+.ulb-stat .v{font-size:22px;font-weight:600;color:var(--ink);letter-spacing:-0.02em}
+.ulb-stat .v.warn{color:var(--error)}
+.ulb-quick{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+
+.tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--hair);margin-bottom:24px}
+.tab{padding:10px 14px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:500;
+  color:var(--mute);border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit}
+.tab:hover{color:var(--ink)}
+.tab.active{color:var(--ink);border-bottom-color:var(--ink)}
+
+.filter-bar{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;margin-bottom:16px;align-items:end}
+@media(max-width:860px){.filter-bar{grid-template-columns:1fr 1fr}}
+
+.badge{display:inline-block;padding:2px 8px;border-radius:var(--radius-sm);font-size:11px;
+  font-family:'JetBrains Mono',monospace;background:var(--canvas-soft);border:1px solid var(--hair);color:var(--body)}
+.badge.danger{background:#fff0f0;border-color:#ffd0d0;color:var(--error)}
+.badge.ok{background:#e7f7ee;border-color:#bfe5cd;color:#0a7d3e}
+
+.ref-card{display:flex;flex-direction:column;gap:8px;padding:24px;background:var(--canvas);
+  border:1px solid var(--hair);border-radius:var(--radius-md);transition:all .15s ease;text-decoration:none;color:inherit}
+.ref-card:hover{border-color:#d6d6d6;box-shadow:var(--shadow-card-hover);text-decoration:none}
+.ref-card .src{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mute);
+  letter-spacing:.06em;text-transform:uppercase}
+.ref-card h4{color:var(--ink)}
+.ref-card p{margin:0;font-size:13px;color:var(--body)}
+
+footer{padding:48px 0;border-top:1px solid var(--hair);color:var(--mute);font-size:13px}
+footer .footer-inner{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+
+.hidden{display:none !important}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.between{justify-content:space-between}
+.mt-16{margin-top:16px}.mt-24{margin-top:24px}.mt-32{margin-top:32px}
+.mb-8{margin-bottom:8px}.mb-16{margin-bottom:16px}.mb-24{margin-bottom:24px}
+.num{font-variant-numeric:tabular-nums}
+.small{font-size:13px;color:var(--mute)}
+.center{text-align:center}
+</style>
+</head>
+<body>
+
+<input id="fileInput" type="file" accept=".csv,text/csv" style="display:none">
+
+<header class="nav">
+  <div class="container nav-inner">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <span>Copilot Billing Analyzer</span>
+    </div>
+    <div class="nav-actions">
+      <button class="btn btn-secondary btn-sm" id="navUpload">Upload CSV</button>
+      <button class="btn btn-ghost btn-sm hidden" id="navReset">Reset</button>
+      <button class="btn btn-ghost btn-sm" id="langToggle">ZH-TW</button>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-mesh"></div>
+  <div class="container hero-inner">
+    <span class="eyebrow" data-i18n="hero_eyebrow">Static / Private / Client-side</span>
+    <h1 data-i18n="hero_title">Analyze GitHub Copilot <span class="accent">billing.</span></h1>
+    <p class="lede" data-i18n="hero_desc">Upload your monthly Copilot usage CSV. Get instant insights, user-level budget impact analysis, and billing scenario simulations. All in your browser, your data never leaves your device.</p>
+    <div class="hero-cta">
+      <button class="btn btn-primary btn-pill" id="heroUpload" data-i18n="btn_upload_csv">Upload CSV</button>
+      <button class="btn btn-secondary btn-pill" id="heroSample" data-i18n="btn_load_sample">Load sample data</button>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="uploadBlock">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">01 &mdash; <span data-i18n="sec_start">Get started</span></span>
+      <h2 data-i18n="upload_title">Upload a Copilot billing CSV.</h2>
+      <p data-i18n="upload_desc">Drop the monthly export from GitHub &gt; Settings &gt; Billing &gt; Copilot usage. Parsing happens locally with PapaParse.</p>
+    </div>
+    <div class="upload-zone" id="dropZone">
+      <h3 data-i18n="drop_here">Drop CSV here</h3>
+      <p data-i18n="drop_or_pick">or pick a file from your device</p>
+      <div class="upload-actions">
+        <button class="btn btn-primary" id="chooseBtn" type="button" data-i18n="btn_choose_file">Choose file</button>
+        <button class="btn btn-secondary" id="sampleBtn" type="button" data-i18n="btn_load_sample">Load sample data</button>
+      </div>
+      <p class="small mt-16" data-i18n="upload_hint">Accepts .csv up to ~20 MB. Tip: drag-and-drop is fastest.</p>
+    </div>
+  </div>
+</section>
+
+<div id="results" class="hidden">
+
+  <!-- 02 Overview -->
+  <section class="block">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">02 &mdash; <span data-i18n="sec_overview">Overview</span></span>
+        <h2 id="overviewTitle" data-i18n="overview_title">Billing overview.</h2>
+        <p id="overviewSub" class="small"></p>
+      </div>
+      <div class="grid grid-4" id="kpiGrid"></div>
+      <div class="mt-24" id="overviewNotes" style="display:none">
+        <div class="card" style="background:var(--canvas-soft)">
+          <h4 class="mb-8" data-i18n="notes_title">Key highlights</h4>
+          <ul id="notesList" style="margin:0;padding-left:20px;font-size:14px;color:var(--body);line-height:1.8"></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 Trends -->
+  <section class="block">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">03 &mdash; <span data-i18n="sec_trends">Trends</span></span>
+        <h2 data-i18n="trends_title">Usage by day, model, organization.</h2>
+      </div>
+      <div class="card elev mb-24">
+        <h4 class="mb-16" data-i18n="chart_daily">Daily cost &amp; active users</h4>
+        <div class="chart-box tall"><canvas id="dailyChart"></canvas></div>
+        <p class="small mt-16" data-i18n="chart_daily_note">Bars: daily AIC cost (left axis). Line: distinct active users (right axis). Coral bars mark peak-spend days (top 10%).</p>
+      </div>
+      <div class="grid grid-2">
+        <div class="card elev">
+          <h4 class="mb-16" data-i18n="chart_family">Cost by model family</h4>
+          <div class="chart-box"><canvas id="familyChart"></canvas></div>
+        </div>
+        <div class="card elev">
+          <h4 class="mb-16" data-i18n="chart_model">Top 10 models</h4>
+          <div class="chart-box"><canvas id="modelChart"></canvas></div>
+        </div>
+        <div class="card elev">
+          <h4 class="mb-16" data-i18n="chart_org">Cost by organization</h4>
+          <div class="chart-box"><canvas id="orgChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 User Breakdown (includes Pareto + Schema button) -->
+  <section class="block">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">04 &mdash; <span data-i18n="sec_users">Users</span></span>
+        <h2 data-i18n="users_title">Per-user breakdown.</h2>
+        <p data-i18n="users_desc">Filter and sort. Users above the ULB threshold are highlighted.</p>
+      </div>
+      <div class="filter-bar">
+        <div>
+          <label class="field" for="userSearch" data-i18n="filter_search">Search user / login</label>
+          <input type="text" id="userSearch" placeholder="username...">
+        </div>
+        <div>
+          <label class="field" for="orgFilter" data-i18n="filter_org">Organization</label>
+          <select id="orgFilter"><option value="">All</option></select>
+        </div>
+        <div>
+          <label class="field" for="overFilter" data-i18n="filter_ulb">ULB filter</label>
+          <select id="overFilter">
+            <option value="" data-i18n="filter_all">All users</option>
+            <option value="over" data-i18n="filter_over">Over ULB only</option>
+            <option value="under" data-i18n="filter_under">Under ULB only</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;align-items:end">
+          <button class="btn btn-secondary btn-sm" id="toggleSchemaBtn" data-i18n="btn_schema">Column reference</button>
+        </div>
+      </div>
+      <!-- Schema panel (hidden by default) -->
+      <div class="hidden mb-24" id="schemaWrap">
+        <div class="card" style="background:var(--canvas-soft)">
+          <div class="toggle-row mb-8">
+            <h4 data-i18n="schema_title" style="margin:0">CSV columns</h4>
+            <div class="row" style="gap:8px;align-items:center">
+              <button class="btn btn-secondary btn-sm" id="schemaModeBtn" data-i18n="schema_show_all">Show all known columns</button>
+              <div class="small"><span data-i18n="schema_source">Source</span>: <a href="https://github.com/jacwu/ghfaq/blob/main/docs/billing-report-format.zh-CN.md" target="_blank" rel="noopener">jacwu/ghfaq</a></div>
+            </div>
+          </div>
+          <p class="small mb-8" data-i18n="schema_legend">Rows with "In file" appear in your uploaded CSV. Rows with "Not in file" are documented columns from the GitHub Copilot UBB spec that did not appear in this export.</p>
+          <div class="table-wrap">
+            <table id="schemaTable">
+              <thead><tr><th style="width:30%">Column</th><th style="width:45%" data-i18n="th_description">Description</th><th data-i18n="th_sample">Sample value</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="userTable">
+          <thead><tr>
+            <th data-sort="rank" style="width:60px">#</th>
+            <th data-sort="user">User</th>
+            <th data-sort="org" data-i18n="th_org">Organization</th>
+            <th data-sort="aic" class="num" data-i18n="th_aic_cost">AIC cost</th>
+            <th data-sort="aic" class="num" data-i18n="th_pct_total">% of total</th>
+            <th data-i18n="th_ulb_status">ULB status</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="small mt-16" id="userTableMeta"></p>
+      <div class="row mt-8" style="gap:8px;align-items:center;flex-wrap:wrap">
+        <div id="userPager" class="row" style="flex-wrap:wrap;gap:6px;align-items:center"></div>
+        <button class="btn btn-secondary btn-sm" id="exportUserCsv" data-i18n="btn_export_csv">Export current view (.csv)</button>
+      </div>
+      <!-- Pareto sub-panel -->
+      <div class="mt-32">
+        <div class="card card-lg elev">
+          <div class="section-head mb-16">
+            <span class="eyebrow" data-i18n="sec_pareto">Pareto Analysis</span>
+            <h4 data-i18n="pareto_title" style="margin-top:4px">Top user concentration.</h4>
+            <p class="small" data-i18n="pareto_desc">See what percentage of total spend is consumed by the top N% of users.</p>
+          </div>
+          <div class="ulb-grid">
+            <div>
+              <label class="field" for="paretoSlider" data-i18n="pareto_label">Top N% of users</label>
+              <input type="range" id="paretoSlider" min="1" max="100" step="1" value="20">
+              <div class="row between mt-16">
+                <span class="small mono"><span data-i18n="pareto_top">Top</span> <span id="paretoValue">20</span>%</span>
+              </div>
+              <div class="ulb-quick mt-16">
+                <span class="small mono" style="align-self:center;margin-right:4px">Quick:</span>
+                <button class="btn btn-secondary btn-sm" data-pareto="10">10%</button>
+                <button class="btn btn-secondary btn-sm" data-pareto="20">20%</button>
+                <button class="btn btn-secondary btn-sm" data-pareto="30">30%</button>
+                <button class="btn btn-secondary btn-sm" data-pareto="50">50%</button>
+              </div>
+              <div class="mt-24">
+                <div class="ulb-stat"><span class="k" data-i18n="pareto_user_count">Users in top group</span><span class="v" id="paretoUserCount">--</span></div>
+                <div class="ulb-stat"><span class="k" data-i18n="pareto_spend_pct">% of total spend</span><span class="v warn" id="paretoSpendPct">--</span></div>
+                <div class="ulb-stat"><span class="k" data-i18n="pareto_spend_amt">Spend by top group</span><span class="v" id="paretoSpendAmt">--</span></div>
+                <div class="ulb-stat"><span class="k" data-i18n="pareto_total_spend">Total spend</span><span class="v" id="paretoTotalSpend">--</span></div>
+              </div>
+            </div>
+            <div>
+              <h4 class="mb-16" data-i18n="pareto_chart_title">Cumulative spend by user rank</h4>
+              <div class="chart-box tall"><canvas id="paretoChart"></canvas></div>
+              <p class="small mt-16" data-i18n="pareto_chart_note">X-axis: users ranked by spend (highest first). Y-axis: cumulative % of total spend.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 ULB Impact -->
+  <section class="block">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">05 &mdash; <span data-i18n="sec_ulb">ULB Impact</span></span>
+        <h2 data-i18n="ulb_title">User-Level Budget simulator.</h2>
+        <p data-i18n="ulb_desc">Set a per-user monthly cap. See how many users would hit it and how much spend would be blocked.</p>
+      </div>
+      <div class="card card-lg elev">
+        <div class="ulb-grid">
+          <div>
+            <label class="field" for="ulbSlider" data-i18n="ulb_label">ULB amount per user (USD)</label>
+            <input type="range" id="ulbSlider" min="0" max="200" step="1" value="19">
+            <div class="row between mt-16">
+              <span class="small mono">$<span id="ulbValue">19</span> / user / month</span>
+              <input type="number" id="ulbInput" min="0" step="1" value="19" style="width:120px">
+            </div>
+            <div class="ulb-quick mt-16">
+              <span class="small mono" style="align-self:center;margin-right:4px">Quick:</span>
+              <button class="btn btn-secondary btn-sm" data-ulb="19">$19</button>
+              <button class="btn btn-secondary btn-sm" data-ulb="30">$30</button>
+              <button class="btn btn-secondary btn-sm" data-ulb="40">$40</button>
+              <button class="btn btn-secondary btn-sm" data-ulb="70">$70</button>
+              <button class="btn btn-secondary btn-sm" data-ulb="100">$100</button>
+              <button class="btn btn-secondary btn-sm" data-ulb="0">No cap</button>
+            </div>
+            <div class="mt-24">
+              <div class="ulb-stat"><span class="k" data-i18n="ulb_users_impacted">Users impacted</span><span class="v warn" id="ulbUsers">--</span></div>
+              <div class="ulb-stat"><span class="k" data-i18n="ulb_users_pct">% of total users</span><span class="v" id="ulbUsersPct">--</span></div>
+              <div class="ulb-stat"><span class="k" data-i18n="ulb_blocked">Spend blocked</span><span class="v warn" id="ulbBlocked">--</span></div>
+              <div class="ulb-stat"><span class="k" data-i18n="ulb_blocked_pct">% of total spend saved</span><span class="v" id="ulbBlockedPct">--</span></div>
+              <div class="ulb-stat"><span class="k" data-i18n="ulb_total">Total spend (current)</span><span class="v" id="ulbTotal">--</span></div>
+            </div>
+          </div>
+          <div>
+            <h4 class="mb-16" data-i18n="ulb_hist_title">User cost distribution</h4>
+            <div class="chart-box tall"><canvas id="ulbHistChart"></canvas></div>
+            <p class="small mt-16" data-i18n="ulb_hist_note">Red bars mark users above the ULB threshold.</p>
+          </div>
+        </div>
+        <div class="mt-24" id="ulbImpactedWrap" style="display:none">
+          <h4 class="mb-16" data-i18n="ulb_impacted_title">Impacted users detail</h4>
+          <div class="table-wrap">
+            <table id="ulbImpactedTable">
+              <thead><tr>
+                <th>#</th>
+                <th>User</th>
+                <th data-i18n="th_org">Organization</th>
+                <th class="num" data-i18n="ulb_col_actual">Actual cost</th>
+                <th class="num" data-i18n="ulb_col_cap">Capped at</th>
+                <th class="num" data-i18n="ulb_col_saved">Savings</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p class="small mt-8" id="ulbImpactedMeta"></p>
+          <div class="row mt-8" style="gap:8px;align-items:center;flex-wrap:wrap">
+            <div id="ulbImpactedPager" class="row" style="flex-wrap:wrap;gap:6px;align-items:center"></div>
+            <button class="btn btn-secondary btn-sm" id="exportUlbCsv" data-i18n="btn_export_ulb_csv">Export impacted users (.csv)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 Scenarios (link only) -->
+  <section class="block">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">06 &mdash; <span data-i18n="sec_scenarios">Scenarios</span></span>
+        <h2 data-i18n="scenario_title">Billing scenario simulator.</h2>
+        <p data-i18n="scenario_desc">Need to estimate costs under different UBB configurations? Use the interactive scenario calculator below.</p>
+      </div>
+      <a class="ref-card" href="https://payton-chou-ms.github.io/ubb-scenario/copilot-ulb-billing-scenarios.html" target="_blank" rel="noopener" style="max-width:600px">
+        <span class="src">GitHub Pages / payton-chou-ms</span>
+        <h4 data-i18n="scenario_link_title">ULB &amp; Billing Scenario Calculator</h4>
+        <p data-i18n="scenario_link_desc">Six interactive scenarios covering seat cost, included credits, ULB, org budget and enterprise pooling. Opens in a new tab.</p>
+      </a>
+    </div>
+  </section>
+</div>
+
+<section class="block" id="referencesBlock">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow" data-i18n="sec_ref">References</span>
+      <h2 data-i18n="ref_title">UBB billing knowledge base.</h2>
+      <p data-i18n="ref_desc">Primary sources behind this analyzer's column dictionary and scenario logic.</p>
+    </div>
+    <div class="grid grid-2">
+      <a class="ref-card" href="https://www.wolai.com/uPNu2N2KQCmL5NDambrABR" target="_blank" rel="noopener">
+        <span class="src">wolai / EN</span>
+        <h4>Billing Assessment Guide for the GitHub Copilot UBB Transition</h4>
+        <p>Step-by-step framework for evaluating organizational impact when moving to usage-based billing.</p>
+      </a>
+      <a class="ref-card" href="https://www.wolai.com/4CMeznYDSEDB9QB1UDc8Y1" target="_blank" rel="noopener">
+        <span class="src">wolai / ZH</span>
+        <h4>GitHub Copilot UBB 计费评估指南</h4>
+        <p>UBB 转型计费评估完整指南（中文版），含决策流程与团队沟通要点。</p>
+      </a>
+      <a class="ref-card" href="https://github.com/jacwu/ghfaq/blob/main/docs/billing-report-format.zh-CN.md" target="_blank" rel="noopener">
+        <span class="src">GitHub / jacwu/ghfaq</span>
+        <h4>Billing report CSV column reference</h4>
+        <p>Field-by-field meaning for every column in the Copilot monthly usage export.</p>
+      </a>
+      <a class="ref-card" href="https://payton-chou-ms.github.io/ubb-scenario/copilot-ulb-billing-scenarios.html" target="_blank" rel="noopener">
+        <span class="src">GitHub Pages / payton-chou-ms</span>
+        <h4>ULB &amp; billing scenarios</h4>
+        <p>Six interactive scenarios covering seat cost, included credits, ULB, org budget and enterprise pooling.</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container footer-inner">
+    <div>
+      <strong style="color:var(--ink)">Copilot Billing Analyzer</strong>
+      <span class="small"> &middot; 100% client-side &middot; your CSV never leaves the browser</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* Copilot Billing Analyzer v2 */
+
+/* ---- i18n ---- */
+var LANG = 'en';
+var I18N = {
+  en: {
+    hero_eyebrow: 'Static / Private / Client-side',
+    hero_title_html: 'Analyze GitHub Copilot <span class="accent">billing</span>',
+    hero_desc: 'Upload your monthly Copilot usage CSV. Get instant insights, user-level budget impact analysis, and billing scenario simulations. All in your browser, your data never leaves your device.',
+    btn_upload_csv: 'Upload CSV',
+    btn_load_sample: 'Load sample data',
+    btn_choose_file: 'Choose file',
+    sec_start: 'Get started',
+    upload_title: 'Upload a Copilot billing CSV.',
+    upload_desc: 'Drop the monthly export from GitHub > Settings > Billing > Copilot usage. Parsing happens locally with PapaParse.',
+    drop_here: 'Drop CSV here',
+    drop_or_pick: 'or pick a file from your device',
+    upload_hint: 'Accepts .csv up to ~20 MB. Tip: drag-and-drop is fastest.',
+    sec_overview: 'Overview',
+    overview_title: 'Billing overview.',
+    sec_schema: 'Schema',
+    schema_title: 'CSV columns.',
+    schema_desc: 'Every column detected in your file, with a description explaining what each field represents.',
+    schema_source: 'Source',
+    btn_expand_schema: 'Expand column details',
+    btn_collapse_schema: 'Collapse column details',
+    btn_schema: 'Column reference',
+    btn_schema_close: 'Hide columns',
+    notes_title: 'Key highlights',
+    note_top_user: 'Highest spender: {user} accounts for {pct} of total.',
+    note_pareto: 'Top 20% of users account for {pct} of total spend.',
+    note_top_model: 'Top model family: {model} ({pct} of spend).',
+    note_top_org: 'Top organization: {org} ({pct} of spend).',
+    note_quota: '{n} rows contain quota/limit notes.',
+    th_description: 'Description',
+    th_sample: 'Sample value',
+    sec_trends: 'Trends',
+    trends_title: 'Usage by day, model, organization.',
+    chart_daily: 'Daily cost & active users',
+    chart_daily_cost: 'AIC cost (USD)',
+    chart_daily_users: 'Active users',
+    chart_daily_note: 'Bars: daily AIC cost (left axis). Line: distinct active users (right axis). Coral bars mark peak-spend days (top 10%).',
+    unit_user: 'users',
+    chart_family: 'Cost by model family',
+    chart_model: 'Top 10 models',
+    chart_org: 'Cost by organization',
+    sec_ulb: 'ULB Impact',
+    ulb_title: 'User-Level Budget simulator',
+    ulb_desc: 'Set a per-user monthly cap. See how many users would hit it and how much spend would be blocked.',
+    ulb_label: 'ULB amount per user (USD)',
+    ulb_users_impacted: 'Users impacted',
+    ulb_users_pct: '% of total users',
+    ulb_blocked: 'Spend blocked',
+    ulb_blocked_pct: '% of total spend saved',
+    ulb_total: 'Total spend (current)',
+    ulb_hist_title: 'User cost distribution',
+    ulb_hist_note: 'Red bars mark users above the ULB threshold.',
+    ulb_impacted_title: 'Impacted users detail',
+    ulb_col_actual: 'Actual cost',
+    ulb_col_cap: 'Capped at',
+    ulb_col_saved: 'Savings',
+    sec_pareto: 'Pareto Analysis',
+    pareto_title: 'Top user concentration.',
+    pareto_desc: 'See what percentage of total spend is consumed by the top N% of users.',
+    pareto_label: 'Top N% of users',
+    pareto_top: 'Top',
+    pareto_user_count: 'Users in top group',
+    pareto_spend_pct: '% of total spend',
+    pareto_spend_amt: 'Spend by top group',
+    pareto_total_spend: 'Total spend',
+    pareto_chart_title: 'Cumulative spend by user rank',
+    pareto_chart_note: 'X-axis: users ranked by spend (highest first). Y-axis: cumulative % of total spend.',
+    sec_scenarios: 'Scenarios',
+    scenario_title: 'Billing scenario simulator.',
+    scenario_desc: 'Need to estimate costs under different UBB configurations? Use the interactive scenario calculator below.',
+    scenario_link_title: 'ULB & Billing Scenario Calculator',
+    scenario_link_desc: 'Six interactive scenarios covering seat cost, included credits, ULB, org budget and enterprise pooling. Opens in a new tab.',
+    scenario_outcome: 'Outcome with your data',
+    th_metric: 'Metric',
+    th_value: 'Value',
+    sec_users: 'Users',
+    users_title: 'Per-user breakdown',
+    users_desc: 'Filter and sort. Users above the ULB threshold are highlighted.',
+    filter_search: 'Search user / login',
+    filter_org: 'Organization',
+    filter_ulb: 'ULB filter',
+    filter_all: 'All users',
+    filter_over: 'Over ULB only',
+    filter_under: 'Under ULB only',
+    th_org: 'Organization',
+    th_aic_cost: 'AIC cost',
+    th_pct_total: '% of total',
+    page_prev: 'Prev',
+    page_next: 'Next',
+    page_of: 'Page {p} / {n}',
+    schema_show_all: 'Show all known columns',
+    schema_show_detected: 'Show only detected',
+    schema_in_file: 'In file',
+    schema_not_in_file: 'Not in file',
+    schema_legend: 'Rows tagged "In file" appear in your uploaded CSV. Rows tagged "Not in file" are documented columns from the GitHub Copilot UBB spec that did not appear in this export.',
+    kpi_quota_hint: '{pct} of rows flagged exceeds_quota=True',
+    th_ulb_status: 'ULB status',
+    btn_export_csv: 'Export current view (.csv)',
+    btn_export_ulb_csv: 'Export impacted users (.csv)',
+    sec_ref: 'References',
+    ref_title: 'UBB billing knowledge base.',
+    ref_desc: "Primary sources behind this analyzer's column dictionary and scenario logic.",
+    kpi_total: 'Total AIC spend',
+    kpi_users: 'Active users',
+    kpi_models: 'Distinct models',
+    kpi_quota: 'Quota-exceeded rows',
+    badge_over: 'Over ULB',
+    badge_within: 'Within',
+    showing: 'Showing',
+    of: 'of',
+    users_filtered: 'users (filtered from',
+    total_suffix: 'total).',
+    lang_btn: 'ZH-TW'
+  },
+  zh: {
+    hero_eyebrow: '\u975C\u614B / \u96B1\u79C1 / \u7D14\u524D\u7AEF',
+    hero_title_html: '\u5206\u6790 GitHub Copilot <span class="accent">\u5E33\u55AE</span>',
+    hero_desc: '\u4E0A\u50B3 Copilot \u6BCF\u6708\u7528\u91CF CSV\uFF0C\u5373\u6642\u7372\u5F97\u6D1E\u5BDF\u3001\u4F7F\u7528\u8005\u9810\u7B97\u5F71\u97FF\u5206\u6790\u8207\u8A08\u8CBB\u60C5\u5883\u6A21\u64EC\u3002\u5168\u90E8\u5728\u700F\u89BD\u5668\u4E2D\u57F7\u884C\uFF0C\u8CC7\u6599\u4E0D\u6703\u96E2\u958B\u60A8\u7684\u88DD\u7F6E\u3002',
+    btn_upload_csv: '\u4E0A\u50B3 CSV',
+    btn_load_sample: '\u8F09\u5165\u7BC4\u4F8B\u8CC7\u6599',
+    btn_choose_file: '\u9078\u64C7\u6A94\u6848',
+    sec_start: '\u958B\u59CB\u4F7F\u7528',
+    upload_title: '\u4E0A\u50B3 Copilot \u5E33\u55AE CSV\u3002',
+    upload_desc: '\u5C07 GitHub > Settings > Billing > Copilot usage \u532F\u51FA\u7684\u6A94\u6848\u62D6\u653E\u81F3\u6B64\u3002\u89E3\u6790\u5168\u90E8\u5728\u672C\u6A5F\u57F7\u884C\u3002',
+    drop_here: '\u5C07 CSV \u62D6\u653E\u81F3\u6B64',
+    drop_or_pick: '\u6216\u5F9E\u60A8\u7684\u88DD\u7F6E\u9078\u64C7\u6A94\u6848',
+    upload_hint: '\u652F\u63F4 .csv\uFF0C\u6700\u5927\u7D04 20 MB\u3002\u62D6\u653E\u6700\u5FEB\u3002',
+    sec_overview: '\u7E3D\u89BD',
+    overview_title: '\u5E33\u55AE\u7E3D\u89BD\u3002',
+    sec_schema: '\u6B04\u4F4D\u8AAA\u660E',
+    schema_title: 'CSV \u6B04\u4F4D\u8A73\u60C5\u3002',
+    schema_desc: '\u5217\u51FA\u6A94\u6848\u4E2D\u5075\u6E2C\u5230\u7684\u6240\u6709\u6B04\u4F4D\uFF0C\u4E26\u63D0\u4F9B\u5404\u6B04\u4F4D\u7684\u8AAA\u660E\u3002',
+    schema_source: '\u4F86\u6E90',
+    btn_expand_schema: '\u5C55\u958B\u6B04\u4F4D\u8A73\u60C5',
+    btn_collapse_schema: '\u6536\u5408\u6B04\u4F4D\u8A73\u60C5',
+    btn_schema: '\u6B04\u4F4D\u53C3\u8003',
+    btn_schema_close: '\u96B1\u85CF\u6B04\u4F4D',
+    notes_title: '\u91CD\u9EDE\u6458\u8981',
+    note_top_user: '\u6700\u9AD8\u82B1\u8CBB\u8005\uFF1A{user} \u4F54\u7E3D\u82B1\u8CBB {pct}\u3002',
+    note_pareto: '\u524D 20% \u4F7F\u7528\u8005\u4F54\u7E3D\u82B1\u8CBB {pct}\u3002',
+    note_top_model: '\u4E3B\u8981\u6A21\u578B\u5BB6\u65CF\uFF1A{model}\uFF08\u4F54 {pct}\uFF09\u3002',
+    note_top_org: '\u4E3B\u8981\u7D44\u7E54\uFF1A{org}\uFF08\u4F54 {pct}\uFF09\u3002',
+    note_quota: '\u5171 {n} \u7B46\u8CC7\u6599\u5305\u542B\u914D\u984D/\u9650\u5236\u8A3B\u8A18\u3002',
+    th_description: '\u8AAA\u660E',
+    th_sample: '\u7BC4\u4F8B\u503C',
+    sec_trends: '\u8DA8\u52E2\u5206\u6790',
+    trends_title: '\u4F9D\u65E5\u671F\u3001\u6A21\u578B\u3001\u7D44\u7E54\u5206\u6790\u3002',
+    chart_daily: '\u6BCF\u65E5\u8CBB\u7528\u8207\u6D3B\u8E8D\u7528\u6236\u8DA8\u52E2',
+    chart_daily_cost: 'AIC \u8CBB\u7528 (USD)',
+    chart_daily_users: '\u6D3B\u8E8D\u7528\u6236\u6578',
+    chart_daily_note: '\u9577\u689D\u5716\uFF1A\u6BCF\u65E5 AIC \u8CBB\u7528\uFF08\u5DE6\u8EF8\uFF09\u3002\u6298\u7DDA\uFF1A\u7576\u65E5\u4E0D\u91CD\u8907\u6D3B\u8E8D\u7528\u6236\u6578\uFF08\u53F3\u8EF8\uFF09\u3002\u73CA\u745A\u8272\u689D\u4EE3\u8868\u524D 10% \u9AD8\u5CF0\u65E5\u3002',
+    unit_user: '\u4EBA',
+    chart_family: '\u4F9D\u6A21\u578B\u5BB6\u65CF\u8CBB\u7528',
+    chart_model: '\u524D 10 \u540D\u6A21\u578B',
+    chart_org: '\u4F9D\u7D44\u7E54\u8CBB\u7528',
+    sec_ulb: 'ULB \u5F71\u97FF\u5206\u6790',
+    ulb_title: '\u4F7F\u7528\u8005\u9810\u7B97\u6A21\u64EC\u5668',
+    ulb_desc: '\u8A2D\u5B9A\u6BCF\u4F4D\u4F7F\u7528\u8005\u7684\u6BCF\u6708\u4E0A\u9650\u3002\u67E5\u770B\u6709\u591A\u5C11\u4F7F\u7528\u8005\u6703\u53D7\u5230\u5F71\u97FF\uFF0C\u4EE5\u53CA\u591A\u5C11\u82B1\u8CBB\u6703\u88AB\u963B\u64CB\u3002',
+    ulb_label: '\u6BCF\u4F4D\u4F7F\u7528\u8005 ULB\uFF08\u7F8E\u5143\uFF09',
+    ulb_users_impacted: '\u53D7\u5F71\u97FF\u4F7F\u7528\u8005',
+    ulb_users_pct: '\u4F54\u7E3D\u4F7F\u7528\u8005 %',
+    ulb_blocked: '\u88AB\u963B\u64CB\u7684\u82B1\u8CBB',
+    ulb_blocked_pct: '\u4F54\u7E3D\u82B1\u8CBB\u7BC0\u7701 %',
+    ulb_total: '\u76EE\u524D\u7E3D\u82B1\u8CBB',
+    ulb_hist_title: '\u4F7F\u7528\u8005\u8CBB\u7528\u5206\u4F48',
+    ulb_hist_note: '\u7D05\u8272\u9577\u689D\u8868\u793A\u8D85\u904E ULB \u9580\u6ABB\u7684\u4F7F\u7528\u8005\u3002',
+    ulb_impacted_title: '\u53D7\u5F71\u97FF\u4F7F\u7528\u8005\u660E\u7D30',
+    ulb_col_actual: '\u5BE6\u969B\u8CBB\u7528',
+    ulb_col_cap: '\u4E0A\u9650\u91D1\u984D',
+    ulb_col_saved: '\u7BC0\u7701\u91D1\u984D',
+    sec_pareto: '\u5E15\u7D2F\u6258\u5206\u6790',
+    pareto_title: '\u9802\u5C16\u4F7F\u7528\u8005\u96C6\u4E2D\u5EA6\u3002',
+    pareto_desc: '\u67E5\u770B\u524D N% \u7684\u4F7F\u7528\u8005\u4F54\u4E86\u7E3D\u82B1\u8CBB\u7684\u591A\u5C11\u767E\u5206\u6BD4\u3002',
+    pareto_label: '\u524D N% \u7684\u4F7F\u7528\u8005',
+    pareto_top: '\u524D',
+    pareto_user_count: '\u9802\u5C16\u7FA4\u7D44\u4EBA\u6578',
+    pareto_spend_pct: '\u4F54\u7E3D\u82B1\u8CBB %',
+    pareto_spend_amt: '\u9802\u5C16\u7FA4\u7D44\u82B1\u8CBB',
+    pareto_total_spend: '\u7E3D\u82B1\u8CBB',
+    pareto_chart_title: '\u4F9D\u4F7F\u7528\u8005\u6392\u540D\u7684\u7D2F\u7A4D\u82B1\u8CBB',
+    pareto_chart_note: 'X \u8EF8\uFF1A\u4F7F\u7528\u8005\u4F9D\u82B1\u8CBB\u7531\u9AD8\u81F3\u4F4E\u6392\u5E8F\u3002Y \u8EF8\uFF1A\u7D2F\u7A4D\u7E3D\u82B1\u8CBB\u767E\u5206\u6BD4\u3002',
+    sec_scenarios: '\u60C5\u5883\u6A21\u64EC',
+    scenario_title: '\u8A08\u8CBB\u60C5\u5883\u6A21\u64EC\u5668\u3002',
+    scenario_desc: '\u9700\u8981\u5728\u4E0D\u540C UBB \u914D\u7F6E\u4E0B\u4F30\u7B97\u8CBB\u7528\uFF1F\u8ACB\u4F7F\u7528\u4E0B\u65B9\u7684\u4E92\u52D5\u5F0F\u60C5\u5883\u8A08\u7B97\u5668\u3002',
+    scenario_link_title: 'ULB \u8207\u8A08\u8CBB\u60C5\u5883\u8A08\u7B97\u5668',
+    scenario_link_desc: '\u516D\u7A2E\u4E92\u52D5\u5F0F\u60C5\u5883\uFF0C\u6DB5\u84CB\u5E2D\u4F4D\u8CBB\u7528\u3001\u5305\u542B\u984D\u5EA6\u3001ULB\u3001\u7D44\u7E54\u9810\u7B97\u8207\u4F01\u696D\u5171\u4EAB\u6C60\u3002\u5728\u65B0\u5206\u9801\u958B\u555F\u3002',
+    scenario_outcome: '\u57FA\u65BC\u60A8\u7684\u8CC7\u6599\u7684\u7D50\u679C',
+    th_metric: '\u6307\u6A19',
+    th_value: '\u6578\u503C',
+    sec_users: '\u4F7F\u7528\u8005\u660E\u7D30',
+    users_title: '\u4F7F\u7528\u8005\u9010\u4EBA\u5206\u6790',
+    users_desc: '\u7BE9\u9078\u548C\u6392\u5E8F\u3002\u8D85\u904E ULB \u9580\u6ABB\u7684\u4F7F\u7528\u8005\u6703\u4EE5\u7D05\u8272\u6A19\u8A18\u3002',
+    filter_search: '\u641C\u5C0B\u4F7F\u7528\u8005 / \u5E33\u865F',
+    filter_org: '\u7D44\u7E54',
+    filter_ulb: 'ULB \u7BE9\u9078',
+    filter_all: '\u6240\u6709\u4F7F\u7528\u8005',
+    filter_over: '\u50C5\u8D85\u904E ULB',
+    filter_under: '\u50C5\u672A\u8D85\u904E ULB',
+    th_org: '\u7D44\u7E54',
+    th_aic_cost: 'AIC \u8CBB\u7528',
+    th_pct_total: '\u4F54\u7E3D\u91D1\u984D',
+    page_prev: '\u4E0A\u4E00\u9801',
+    page_next: '\u4E0B\u4E00\u9801',
+    page_of: '\u7B2C {p} / {n} \u9801',
+    schema_show_all: '\u986F\u793A\u6240\u6709\u5DF2\u77E5\u6B04\u4F4D',
+    schema_show_detected: '\u53EA\u986F\u793A\u672C\u6A94\u6B04\u4F4D',
+    schema_in_file: '\u672C\u6A94\u6709',
+    schema_not_in_file: '\u672C\u6A94\u7121',
+    schema_legend: '\u6A19\u8A18\u300C\u672C\u6A94\u6709\u300D\u7684\u8868\u793A\u51FA\u73FE\u5728\u4F60\u4E0A\u50B3\u7684 CSV \u4E2D\uFF1B\u6A19\u8A18\u300C\u672C\u6A94\u7121\u300D\u7684\u662F GitHub Copilot UBB \u898F\u683C\u4E2D\u5176\u4ED6\u53EF\u80FD\u51FA\u73FE\u7684\u6B04\u4F4D\uFF0C\u672C\u6B21\u532F\u51FA\u4E26\u672A\u5305\u542B\u3002',
+    kpi_quota_hint: '{pct} \u7684\u7B46\u6578\u88AB\u6A19\u8A18 exceeds_quota=True',
+    th_ulb_status: 'ULB \u72C0\u614B',
+    btn_export_csv: '\u532F\u51FA\u76EE\u524D\u6AA2\u8996\u7D50\u679C (.csv)',
+    btn_export_ulb_csv: '\u532F\u51FA\u53D7\u5F71\u97FF\u4F7F\u7528\u8005 (.csv)',
+    sec_ref: '\u53C3\u8003\u8CC7\u6599',
+    ref_title: 'UBB \u8A08\u8CBB\u77E5\u8B58\u5EAB\u3002',
+    ref_desc: '\u672C\u5206\u6790\u5668\u7684\u6B04\u4F4D\u5B57\u5178\u8207\u60C5\u5883\u908F\u8F2F\u4E3B\u8981\u53C3\u8003\u4F86\u6E90\u3002',
+    kpi_total: 'AIC \u7E3D\u82B1\u8CBB',
+    kpi_users: '\u6D3B\u8E8D\u4F7F\u7528\u8005',
+    kpi_models: '\u4E0D\u540C\u6A21\u578B\u6578',
+    kpi_quota: '\u8D85\u51FA\u914D\u984D\u7684\u7B46\u6578',
+    badge_over: '\u8D85\u904E ULB',
+    badge_within: '\u672A\u8D85\u904E',
+    showing: '\u986F\u793A',
+    of: '/',
+    users_filtered: '\u4F4D\u4F7F\u7528\u8005\uFF08\u5F9E',
+    total_suffix: '\u4F4D\u4E2D\u7BE9\u9078\uFF09\u3002',
+    lang_btn: 'EN'
+  }
+};
+
+function t(key) {
+  return (I18N[LANG] && I18N[LANG][key]) || (I18N.en[key]) || key;
+}
+
+function applyI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n');
+    if (key.endsWith('_html') || key === 'hero_title') {
+      el.innerHTML = t(key === 'hero_title' ? 'hero_title_html' : key);
+    } else {
+      el.textContent = t(key);
+    }
+  });
+  document.getElementById('langToggle').textContent = t('lang_btn');
+  var schemaBtn = document.getElementById('toggleSchemaBtn');
+  if (schemaBtn) {
+    var expanded = !qs('#schemaWrap').classList.contains('hidden');
+    schemaBtn.textContent = expanded ? t('btn_schema_close') : t('btn_schema');
+  }
+}
+
+function toggleLang() {
+  LANG = (LANG === 'en') ? 'zh' : 'en';
+  applyI18n();
+  if (state.stats) {
+    renderOverview();
+    renderOverviewNotes();
+    renderSchema();
+    renderUserTable();
+  }
+}
+
+/* ---- Column descriptions ---- */
+var COL_DESC = {
+  'date': 'Date (UTC) when this usage record was generated.',
+  'Usage at': 'Timestamp (UTC) when this usage record was generated.',
+  'username': 'GitHub login (username) of the user.',
+  'User': 'GitHub display name of the user.',
+  'Login': 'GitHub login (username).',
+  'product': 'Product line, typically "copilot".',
+  'Product': 'Product line, typically "Copilot".',
+  'sku': 'Billing SKU, e.g. "copilot_premium_request".',
+  'SKU': 'Billing SKU, e.g. "Copilot - Premium request".',
+  'quantity': 'Raw usage quantity (unit depends on unit_type).',
+  'Quantity': 'Usage quantity (unit depends on Unit Type).',
+  'unit_type': 'Unit of measurement: requests / tokens.',
+  'Unit Type': 'Unit of measurement: PRU (Premium Request Unit), request, or token.',
+  'applied_cost_per_quantity': 'Unit rate (USD) applied to this row (per request/token).',
+  'Price Per Unit ($)': 'Unit price; affected by multiplier in AIC mode.',
+  'Multiplier': 'Model multiplier, e.g. Claude Opus = 10x, GPT-5 = 1x.',
+  'gross_amount': 'Gross monetary amount before discount (USD).',
+  'discount_amount': 'Discount applied to this row (USD).',
+  'net_amount': 'Net amount billed in cash (USD) = gross - discount.',
+  'exceeds_quota': 'True if this row exceeded the monthly quota.',
+  'total_monthly_quota': 'Monthly quota threshold configured.',
+  'organization': 'Billing organization.',
+  'Owner': 'Billing owner (organization or personal account).',
+  'Owner Type': 'Owner type: Organization / User / Enterprise.',
+  'cost_center_name': 'Cost Center name (if configured).',
+  'Cost Center Name': 'Cost Center name (if configured).',
+  'aic_quantity': 'AIC-equivalent quantity (multiplier applied). Premium Request Units.',
+  'aic_gross_amount': 'AIC cost (USD) for this record. Primary cost metric.',
+  'Cost ($)': 'Actual AIC cost for this record (USD).',
+  'Discount Amount ($)': 'Discount amount applied.',
+  'Repository': 'Repository where usage occurred (if trackable).',
+  'Repository Slug': 'Repository slug (owner/repo).',
+  'Note': 'System notes, e.g. "quota exceeded".',
+  'Plan': 'Copilot plan: Business / Enterprise / Individual.',
+  'Model': 'AI model used for this request.',
+  'model': 'AI model used for this request.',
+  'Premium Request': 'Whether this is a premium request.'
+};
+
+var COL_DESC_ZH = {
+  'date': '\u4F7F\u7528\u65E5\u671F\uFF08UTC\uFF09\u3002',
+  'Usage at': '\u4F7F\u7528\u8A18\u9304\u6642\u6233\uFF08UTC\uFF09\u3002',
+  'username': 'GitHub \u767B\u5165\u5E33\u865F\uFF08username\uFF09\u3002',
+  'User': 'GitHub \u986F\u793A\u540D\u7A31\u3002',
+  'Login': 'GitHub login \u5E33\u865F\u3002',
+  'product': '\u7522\u54C1\u985E\u5225\uFF0C\u901A\u5E38\u70BA copilot\u3002',
+  'Product': '\u7522\u54C1\u985E\u5225\uFF08\u901A\u5E38\u70BA Copilot\uFF09\u3002',
+  'sku': '\u8A08\u8CBB SKU\uFF0C\u4F8B\u5982 copilot_premium_request\u3002',
+  'SKU': '\u8A08\u8CBB SKU\uFF0C\u4F8B\u5982 Copilot - Premium request\u3002',
+  'quantity': '\u539F\u59CB\u4F7F\u7528\u91CF\uFF08\u55AE\u4F4D\u7531 unit_type \u6C7A\u5B9A\uFF09\u3002',
+  'Quantity': '\u4F7F\u7528\u91CF\uFF08\u55AE\u4F4D\u4F9D unit_type\uFF09\u3002',
+  'unit_type': '\u8A08\u91CF\u55AE\u4F4D\uFF1Arequests / tokens\u3002',
+  'Unit Type': '\u8A08\u91CF\u55AE\u4F4D\uFF1APRU\uFF08Premium Request Unit\uFF09/ request / token\u3002',
+  'applied_cost_per_quantity': '\u6BCF\u55AE\u4F4D\u55AE\u50F9\uFF08USD\uFF09\u3002',
+  'Price Per Unit ($)': '\u55AE\u4F4D\u50F9\uFF1B\u53D7\u6A21\u578B\u500D\u7387\u5F71\u97FF\u3002',
+  'Multiplier': '\u6A21\u578B\u500D\u7387\uFF0C\u4F8B Claude Opus = 10x\u3001GPT-5 = 1x\u3002',
+  'gross_amount': '\u672A\u6263\u6298\u524D\u91D1\u984D\uFF08USD\uFF09\u3002',
+  'discount_amount': '\u6298\u6263\u91D1\u984D\uFF08USD\uFF09\u3002',
+  'net_amount': '\u5BE6\u969B\u73FE\u91D1\u8A08\u8CBB\u91D1\u984D\uFF08USD\uFF09= gross - discount\u3002',
+  'exceeds_quota': '\u662F\u5426\u8D85\u51FA\u6708\u5EA6\u914D\u984D\uFF08True/False\uFF09\u3002',
+  'total_monthly_quota': '\u6708\u5EA6\u914D\u984D\u9580\u6AAE\u8A2D\u5B9A\u3002',
+  'organization': '\u8A08\u8CBB\u7D44\u7E54\u3002',
+  'Owner': '\u8A08\u8CBB\u64C1\u6709\u8005\uFF08\u7D44\u7E54\u6216\u500B\u4EBA\uFF09\u3002',
+  'Owner Type': '\u64C1\u6709\u8005\u985E\u578B\uFF1AOrganization / User / Enterprise\u3002',
+  'cost_center_name': '\u6210\u672C\u4E2D\u5FC3\u540D\u7A31\uFF08\u82E5\u6709\u8A2D\u5B9A\uFF09\u3002',
+  'Cost Center Name': '\u6210\u672C\u4E2D\u5FC3\u540D\u7A31\uFF08\u82E5\u6709\u8A2D\u5B9A\uFF09\u3002',
+  'aic_quantity': 'AIC \u7B49\u6548\u4F7F\u7528\u91CF\uFF08\u5DF2\u4E58\u500D\u7387\uFF09\u3002\u5373 Premium Request Units\u3002',
+  'aic_gross_amount': 'AIC \u8A08\u8CBB\u91D1\u984D\uFF08USD\uFF09\u3002\u672C\u5DE5\u5177\u4E3B\u8981\u91C7\u7528\u7684\u6210\u672C\u6B04\u4F4D\u3002',
+  'Cost ($)': 'AIC \u8A08\u8CBB\u91D1\u984D\uFF08USD\uFF09\u3002',
+  'Discount Amount ($)': '\u6298\u6263\u91D1\u984D\u3002',
+  'Repository': '\u4F7F\u7528\u4F86\u6E90\u7684 Repository\uFF08\u82E5\u53EF\u8FFD\u8E64\uFF09\u3002',
+  'Repository Slug': 'Repository slug (owner/repo)\u3002',
+  'Note': '\u7CFB\u7D71\u8A3B\u8A18\uFF0C\u4F8B\u5982 quota exceeded\u3002',
+  'Plan': 'Copilot \u65B9\u6848\uFF1ABusiness / Enterprise / Individual\u3002',
+  'Model': 'AI \u6A21\u578B\u540D\u7A31\u3002',
+  'model': 'AI \u6A21\u578B\u540D\u7A31\u3002',
+  'Premium Request': '\u662F\u5426\u70BA premium request\u3002'
+};
+
+function descFor(col) {
+  var dict = (LANG === 'zh') ? COL_DESC_ZH : COL_DESC;
+  if (dict[col]) return dict[col];
+  var k = col.toLowerCase();
+  for (var key in dict) {
+    if (key.toLowerCase() === k) return dict[key];
+  }
+  if (k.indexOf('cost') >= 0) return 'Cost field (USD).';
+  if (k.indexOf('quantity') >= 0) return 'Usage quantity.';
+  if (k.indexOf('user') >= 0 || k.indexOf('login') >= 0) return 'User identifier.';
+  if (k.indexOf('model') >= 0) return 'Model name.';
+  if (k.indexOf('date') >= 0 || k.indexOf('time') >= 0) return 'Timestamp.';
+  return 'Not documented yet. See jacwu/ghfaq for reference.';
+}
+
+/* ---- Model families ---- */
+function familyOf(model) {
+  if (!model) return 'Other';
+  var m = String(model).toLowerCase();
+  if (m.indexOf('opus') >= 0) return 'Claude Opus';
+  if (m.indexOf('sonnet') >= 0) return 'Claude Sonnet';
+  if (m.indexOf('haiku') >= 0) return 'Claude Haiku';
+  if (m.indexOf('claude') >= 0) return 'Claude (other)';
+  if (m.indexOf('gpt-5') >= 0 || m.indexOf('gpt5') >= 0) return 'GPT-5.x';
+  if (m.indexOf('gpt-4') >= 0 || m.indexOf('gpt4') >= 0) return 'GPT-4.x';
+  if (m.indexOf('gpt-3') >= 0) return 'GPT-3.x';
+  if (m.indexOf('gpt') >= 0) return 'GPT (other)';
+  if (m.indexOf('gemini') >= 0) return 'Gemini';
+  if (m.indexOf('grok') >= 0) return 'Grok';
+  if (m.indexOf('o1') >= 0 || m.indexOf('o3') >= 0 || m.indexOf('o4') >= 0) return 'OpenAI o-series';
+  return 'Other';
+}
+
+/* ---- Scenarios ---- */
+/* ---- Sample CSV ---- */
+var SAMPLE_CSV = [
+  'Usage at,User,SKU,Quantity,Unit Type,Price Per Unit ($),Multiplier,Owner,Owner Type,Cost ($),Model,Plan',
+  '2026-04-01T08:10:00Z,user-01,Copilot - Premium request,15,PRU,0.04,1,sample-enterprise,Organization,0.60,GPT-5,Business',
+  '2026-04-01T09:30:00Z,user-02,Copilot - Premium request,10,PRU,0.04,10,sample-enterprise,Organization,4.00,Claude Opus 4.7,Business',
+  '2026-04-01T10:45:00Z,user-03,Copilot - Premium request,8,PRU,0.04,1,sample-enterprise,Organization,0.32,GPT-5 mini,Business',
+  '2026-04-02T08:05:00Z,user-04,Copilot - Premium request,20,PRU,0.04,2.5,sample-enterprise,Organization,2.00,Claude Sonnet 4.6,Business',
+  '2026-04-02T11:20:00Z,user-05,Copilot - Premium request,12,PRU,0.04,1,sample-enterprise,Organization,0.48,GPT-4.1,Business',
+  '2026-04-03T09:00:00Z,user-06,Copilot - Premium request,35,PRU,0.04,10,sample-enterprise,Organization,14.00,Claude Opus 4.7,Business',
+  '2026-04-03T10:15:00Z,user-07,Copilot - Premium request,6,PRU,0.04,1,sample-enterprise,Organization,0.24,GPT-5 mini,Business',
+  '2026-04-04T08:50:00Z,user-08,Copilot - Premium request,18,PRU,0.04,2.5,sample-enterprise,Organization,1.80,Claude Sonnet 4.6,Business',
+  '2026-04-04T14:30:00Z,user-09,Copilot - Premium request,9,PRU,0.04,1,sample-enterprise,Organization,0.36,GPT-4.1,Business',
+  '2026-04-05T09:10:00Z,user-10,Copilot - Premium request,28,PRU,0.04,10,sample-enterprise,Organization,11.20,Claude Opus 4.7,Business',
+  '2026-04-07T08:22:00Z,user-11,Copilot - Premium request,14,PRU,0.04,1,sample-enterprise,Organization,0.56,GPT-5,Business',
+  '2026-04-07T10:05:00Z,user-12,Copilot - Premium request,7,PRU,0.04,1,sample-enterprise,Organization,0.28,GPT-5 mini,Business',
+  '2026-04-08T09:40:00Z,user-13,Copilot - Premium request,22,PRU,0.04,2.5,sample-enterprise,Organization,2.20,Claude Sonnet 4.6,Business',
+  '2026-04-08T11:55:00Z,user-14,Copilot - Premium request,11,PRU,0.04,1,sample-enterprise,Organization,0.44,GPT-4.1,Business',
+  '2026-04-09T08:15:00Z,user-15,Copilot - Premium request,40,PRU,0.04,10,sample-enterprise,Organization,16.00,Claude Opus 4.7,Business',
+  '2026-04-09T13:20:00Z,user-16,Copilot - Premium request,5,PRU,0.04,1,sample-enterprise,Organization,0.20,GPT-5 mini,Business',
+  '2026-04-10T09:30:00Z,user-17,Copilot - Premium request,16,PRU,0.04,2.5,sample-enterprise,Organization,1.60,Claude Sonnet 4.6,Business',
+  '2026-04-10T14:10:00Z,user-18,Copilot - Premium request,13,PRU,0.04,1,sample-enterprise,Organization,0.52,GPT-5,Business',
+  '2026-04-11T10:00:00Z,user-19,Copilot - Premium request,25,PRU,0.04,10,sample-enterprise,Organization,10.00,Claude Opus 4.7,Business',
+  '2026-04-11T15:45:00Z,user-20,Copilot - Premium request,8,PRU,0.04,1,sample-enterprise,Organization,0.32,GPT-4.1,Business',
+  '2026-04-14T08:30:00Z,user-21,Copilot - Premium request,19,PRU,0.04,2.5,sample-enterprise,Organization,1.90,Claude Sonnet 4.6,Business',
+  '2026-04-14T11:10:00Z,user-22,Copilot - Premium request,10,PRU,0.04,1,sample-enterprise,Organization,0.40,GPT-5 mini,Business',
+  '2026-04-15T09:20:00Z,user-23,Copilot - Premium request,32,PRU,0.04,10,sample-enterprise,Organization,12.80,Claude Opus 4.7,Business',
+  '2026-04-15T14:00:00Z,user-24,Copilot - Premium request,7,PRU,0.04,1,sample-enterprise,Organization,0.28,GPT-5,Business',
+  '2026-04-16T08:45:00Z,user-25,Copilot - Premium request,15,PRU,0.04,2.5,sample-enterprise,Organization,1.50,Claude Sonnet 4.6,Business',
+  '2026-04-17T10:30:00Z,user-26,Copilot - Premium request,11,PRU,0.04,1,sample-enterprise,Organization,0.44,GPT-4.1,Business',
+  '2026-04-18T09:15:00Z,user-27,Copilot - Premium request,45,PRU,0.04,10,sample-enterprise,Organization,18.00,Claude Opus 4.7,Business',
+  '2026-04-21T08:00:00Z,user-28,Copilot - Premium request,6,PRU,0.04,1,sample-enterprise,Organization,0.24,GPT-5 mini,Business',
+  '2026-04-22T10:20:00Z,user-29,Copilot - Premium request,20,PRU,0.04,2.5,sample-enterprise,Organization,2.00,Claude Sonnet 4.6,Business',
+  '2026-04-23T11:40:00Z,user-30,Copilot - Premium request,9,PRU,0.04,1,sample-enterprise,Organization,0.36,GPT-5,Business',
+  '2026-04-24T09:00:00Z,user-01,Copilot - Premium request,22,PRU,0.04,10,sample-enterprise,Organization,8.80,Claude Opus 4.7,Business',
+  '2026-04-25T10:10:00Z,user-02,Copilot - Premium request,18,PRU,0.04,2.5,sample-enterprise,Organization,1.80,Claude Sonnet 4.6,Business',
+  '2026-04-25T13:30:00Z,user-06,Copilot - Premium request,30,PRU,0.04,10,sample-enterprise,Organization,12.00,Claude Opus 4.7,Business',
+  '2026-04-26T08:20:00Z,user-10,Copilot - Premium request,20,PRU,0.04,10,sample-enterprise,Organization,8.00,Claude Opus 4.7,Business',
+  '2026-04-27T09:40:00Z,user-15,Copilot - Premium request,35,PRU,0.04,10,sample-enterprise,Organization,14.00,Claude Opus 4.7,Business',
+  '2026-04-28T10:50:00Z,user-19,Copilot - Premium request,28,PRU,0.04,10,sample-enterprise,Organization,11.20,Claude Opus 4.7,Business',
+  '2026-04-28T14:15:00Z,user-23,Copilot - Premium request,24,PRU,0.04,10,sample-enterprise,Organization,9.60,Claude Opus 4.7,Business',
+  '2026-04-29T09:05:00Z,user-27,Copilot - Premium request,38,PRU,0.04,10,sample-enterprise,Organization,15.20,Claude Opus 4.7,Business',
+  '2026-04-30T11:30:00Z,user-03,Copilot - Premium request,14,PRU,0.04,1,sample-enterprise,Organization,0.56,GPT-5,Business',
+  '2026-04-30T15:00:00Z,user-08,Copilot - Premium request,16,PRU,0.04,2.5,sample-enterprise,Organization,1.60,Claude Sonnet 4.6,Business'
+].join('\n');
+
+/* ---- State ---- */
+var state = {
+  rows: [], headers: [], stats: null,
+  charts: {}, ulb: 19, paretoN: 20,
+  sort: {key:'aic', dir:'desc'},
+  filters: {q:'', org:'', over:''},
+  ulbBinSize: 5,
+  userPage: 1, userPageSize: 20,
+  ulbPage: 1, ulbPageSize: 20,
+  schemaMode: 'detected'
+};
+
+/* ---- Helpers ---- */
+function qs(s, r) { return (r || document).querySelector(s); }
+function qsa(s, r) { return Array.from((r || document).querySelectorAll(s)); }
+function fmtDollar(n) { return '$' + (Number(n) || 0).toLocaleString(undefined, {maximumFractionDigits:2, minimumFractionDigits:2}); }
+function fmtInt(n) { return Number(n || 0).toLocaleString(); }
+function pct(n, d) { return d ? ((n / d) * 100).toFixed(1) + '%' : '0%'; }
+function escHtml(s) {
+  var d = document.createElement('div');
+  d.appendChild(document.createTextNode(String(s)));
+  return d.innerHTML;
+}
+
+function pickCol(headers, candidates) {
+  var low = headers.map(function(h) { return h.toLowerCase().trim(); });
+  var i, j;
+  for (j = 0; j < candidates.length; j++) {
+    i = low.indexOf(candidates[j].toLowerCase());
+    if (i >= 0) return headers[i];
+  }
+  for (j = 0; j < candidates.length; j++) {
+    for (i = 0; i < low.length; i++) {
+      if (low[i].indexOf(candidates[j].toLowerCase()) >= 0) return headers[i];
+    }
+  }
+  return null;
+}
+
+/* ---- Parse + analyze ---- */
+function parseCsv(text, cb) {
+  Papa.parse(text, {
+    header: true, skipEmptyLines: true,
+    complete: function(res) {
+      if (!res.data || !res.data.length) { cb(new Error('CSV is empty or unreadable')); return; }
+      cb(null, {rows: res.data, headers: res.meta.fields});
+    },
+    error: function(err) { cb(err); }
+  });
+}
+
+function analyze(rows, headers) {
+  var cUser  = pickCol(headers, ['username','User','Login','user','login']);
+  var cCost  = pickCol(headers, ['aic_gross_amount','net_amount','gross_amount','Cost ($)','Cost','Amount']);
+  var cQty   = pickCol(headers, ['aic_quantity','Quantity','quantity']);
+  var cModel = pickCol(headers, ['Model','model']);
+  var cOrg   = pickCol(headers, ['organization','Owner','Organization','owner']);
+  var cDate  = pickCol(headers, ['Usage at','date','Date','Timestamp']);
+  var cNote  = pickCol(headers, ['exceeds_quota','Note','note']);
+
+  var byUser = {}, byDay = {}, byDayUsers = {}, byModel = {}, byFamily = {}, byOrg = {};
+  var total = 0, quotaHits = 0;
+  var i, r, u, cost, qty, mdl, org, note, day, fam;
+  for (i = 0; i < rows.length; i++) {
+    r = rows[i];
+    u = (cUser ? r[cUser] : 'unknown') || 'unknown';
+    cost = parseFloat(cCost ? r[cCost] : 0) || 0;
+    qty = parseFloat(cQty ? r[cQty] : 0) || 0;
+    mdl = (cModel ? r[cModel] : 'unknown') || 'unknown';
+    org = (cOrg ? r[cOrg] : 'unknown') || 'unknown';
+    note = (cNote ? r[cNote] : '') || '';
+    day = '';
+    if (cDate && r[cDate]) { day = String(r[cDate]).slice(0, 10); }
+    if (!byUser[u]) byUser[u] = {user:u, org:org, aic:0, pru:0};
+    byUser[u].aic += cost;
+    byUser[u].pru += qty;
+    if (!byUser[u].org || byUser[u].org === 'unknown') byUser[u].org = org;
+    if (day) {
+      byDay[day] = (byDay[day] || 0) + cost;
+      if (!byDayUsers[day]) byDayUsers[day] = {};
+      byDayUsers[day][u] = 1;
+    }
+    byModel[mdl] = (byModel[mdl] || 0) + cost;
+    fam = familyOf(mdl);
+    byFamily[fam] = (byFamily[fam] || 0) + cost;
+    byOrg[org] = (byOrg[org] || 0) + cost;
+    total += cost;
+    if (/^(true|1|yes)$/i.test(String(note).trim()) || /quota|exceed|limit/i.test(note)) quotaHits++;
+  }
+  var userArr = [];
+  for (var key in byUser) userArr.push(byUser[key]);
+  userArr.sort(function(a, b) { return b.aic - a.aic; });
+  userArr.forEach(function(x, idx) { x.rank = idx + 1; });
+  var dates = Object.keys(byDay).sort();
+  var byDayUserCount = {};
+  for (var d in byDayUsers) byDayUserCount[d] = Object.keys(byDayUsers[d]).length;
+  return {
+    total: total, quotaHits: quotaHits, userCount: userArr.length,
+    modelCount: Object.keys(byModel).length,
+    dateRange: [dates[0] || '', dates[dates.length - 1] || ''],
+    byDay: byDay, byDayUsers: byDayUserCount,
+    byModel: byModel, byFamily: byFamily, byOrg: byOrg, userArr: userArr,
+    cols: {cUser:cUser, cCost:cCost, cQty:cQty, cModel:cModel, cOrg:cOrg, cDate:cDate, cNote:cNote}
+  };
+}
+
+/* ---- Render ---- */
+function renderAll() {
+  qs('#results').classList.remove('hidden');
+  qs('#uploadBlock').classList.add('hidden');
+  qs('#navUpload').classList.add('hidden');
+  qs('#navReset').classList.remove('hidden');
+  renderOverview();
+  renderOverviewNotes();
+  renderCharts();
+  renderSchema();
+  populateFilters();
+  renderUserTable();
+  renderPareto();
+  renderUlb();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function renderOverview() {
+  var s = state.stats;
+  var orgs = Object.keys(s.byOrg);
+  orgs.sort(function(a, b) { return s.byOrg[b] - s.byOrg[a]; });
+  var mainOrg = orgs[0] || '--';
+  qs('#overviewTitle').textContent = mainOrg + ' - Copilot billing';
+  qs('#overviewSub').textContent =
+    'Range ' + (s.dateRange[0] || '--') + ' to ' + (s.dateRange[1] || '--') +
+    ' / ' + s.userCount + ' users / ' + s.modelCount + ' models';
+  var kpi = qs('#kpiGrid');
+  kpi.innerHTML = '';
+  var quotaPct = s.total > 0 ? pct(s.quotaHits, state.rows.length) : '0%';
+  var items = [
+    [t('kpi_total'), fmtDollar(s.total), ''],
+    [t('kpi_users'), fmtInt(s.userCount), ''],
+    [t('kpi_models'), fmtInt(s.modelCount), ''],
+    [t('kpi_quota'), fmtInt(s.quotaHits), t('kpi_quota_hint').replace('{pct}', quotaPct)]
+  ];
+  items.forEach(function(item) {
+    var d = document.createElement('div');
+    d.className = 'kpi';
+    var hint = item[2] ? '<div class="delta">' + escHtml(item[2]) + '</div>' : '';
+    d.innerHTML = '<div class="label">' + escHtml(item[0]) + '</div><div class="value num">' + item[1] + '</div>' + hint;
+    kpi.appendChild(d);
+  });
+}
+
+function renderOverviewNotes() {
+  var s = state.stats;
+  var notes = [];
+  var topUser = s.userArr[0];
+  if (topUser) {
+    notes.push(t('note_top_user').replace('{user}', topUser.user).replace('{pct}', pct(topUser.aic, s.total)));
+  }
+  var topN = Math.max(1, Math.ceil(s.userCount * 0.2));
+  var topSpend = 0;
+  for (var i = 0; i < topN && i < s.userArr.length; i++) topSpend += s.userArr[i].aic;
+  notes.push(t('note_pareto').replace('{pct}', pct(topSpend, s.total)));
+  var families = Object.keys(s.byFamily).sort(function(a,b){ return s.byFamily[b] - s.byFamily[a]; });
+  if (families.length) {
+    notes.push(t('note_top_model').replace('{model}', families[0]).replace('{pct}', pct(s.byFamily[families[0]], s.total)));
+  }
+  var orgs = Object.keys(s.byOrg);
+  if (orgs.length > 1) {
+    orgs.sort(function(a,b){ return s.byOrg[b] - s.byOrg[a]; });
+    notes.push(t('note_top_org').replace('{org}', orgs[0]).replace('{pct}', pct(s.byOrg[orgs[0]], s.total)));
+  }
+  if (s.quotaHits > 0) {
+    notes.push(t('note_quota').replace('{n}', fmtInt(s.quotaHits)));
+  }
+  var wrap = qs('#overviewNotes');
+  var list = qs('#notesList');
+  if (notes.length) {
+    list.innerHTML = notes.map(function(n) { return '<li>' + escHtml(n) + '</li>'; }).join('');
+    wrap.style.display = '';
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+function renderSchema() {
+  var tb = qs('#schemaTable tbody');
+  tb.innerHTML = '';
+  var first = state.rows[0] || {};
+  var headers;
+  var detected = (state.headers || []).slice();
+  var detectedSet = {};
+  detected.forEach(function(h){ detectedSet[h.toLowerCase()] = true; });
+  if (state.schemaMode === 'all') {
+    var allKeys = Object.keys(COL_DESC);
+    var seen = {};
+    headers = detected.slice();
+    headers.forEach(function(h){ seen[h.toLowerCase()] = true; });
+    allKeys.forEach(function(k){ if (!seen[k.toLowerCase()]) { headers.push(k); seen[k.toLowerCase()] = true; } });
+  } else {
+    headers = detected;
+  }
+  headers.forEach(function(h) {
+    var tr = document.createElement('tr');
+    var inFile = detectedSet[h.toLowerCase()];
+    var sample = (inFile && first[h] != null) ? String(first[h]) : '';
+    if (sample.length > 80) sample = sample.slice(0, 80) + '...';
+    var badge = inFile
+      ? '<span class="badge ok" style="margin-left:6px">' + t('schema_in_file') + '</span>'
+      : '<span class="badge" style="margin-left:6px">' + t('schema_not_in_file') + '</span>';
+    tr.innerHTML = '<td><code>' + escHtml(h) + '</code>' + badge + '</td>' +
+      '<td>' + escHtml(descFor(h)) + '</td>' +
+      '<td>' + (inFile ? escHtml(sample) : '<span class="small mono" style="color:var(--mute)">--</span>') + '</td>';
+    if (!inFile) tr.style.opacity = '.6';
+    tb.appendChild(tr);
+  });
+  var modeBtn = qs('#schemaModeBtn');
+  if (modeBtn) {
+    modeBtn.textContent = state.schemaMode === 'all'
+      ? t('schema_show_detected') + ' (' + detected.length + ')'
+      : t('schema_show_all') + ' (' + Object.keys(COL_DESC).length + ')';
+  }
+}
+
+function toggleSchemaMode() {
+  state.schemaMode = state.schemaMode === 'all' ? 'detected' : 'all';
+  renderSchema();
+}
+
+function toggleSchema() {
+  var wrap = qs('#schemaWrap');
+  var btn = qs('#toggleSchemaBtn');
+  var expanded = !wrap.classList.contains('hidden');
+  wrap.classList.toggle('hidden');
+  btn.textContent = expanded ? t('btn_schema') : t('btn_schema_close');
+}
+
+/* ---- Chart defaults ---- */
+Chart.register(ChartDataLabels);
+Chart.defaults.color = '#4d4d4d';
+Chart.defaults.borderColor = '#ebebeb';
+Chart.defaults.font.family = "'Inter','Geist',ui-sans-serif,system-ui,sans-serif";
+Chart.defaults.plugins.datalabels = {display: false};
+
+var PALETTE = ['#0070f3','#7928ca','#ff0080','#50e3c2','#f5a623','#00dfd8','#007cf0','#ff4d4d','#36b37e','#6554c0','#ff8b00','#00b8d9'];
+
+function destroyChart(k) {
+  if (state.charts[k]) { state.charts[k].destroy(); delete state.charts[k]; }
+}
+
+function chartOpts(scales, hideLegend) {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {legend:{display: !hideLegend, position:'bottom'}},
+    scales: Object.assign({y:{grid:{color:'#ebebeb'}}, x:{grid:{display:false}}}, scales || {})
+  };
+}
+
+function renderCharts() {
+  var s = state.stats;
+  var days = Object.keys(s.byDay).sort();
+  var costs = days.map(function(d){return s.byDay[d];});
+  var users = days.map(function(d){return (s.byDayUsers && s.byDayUsers[d]) || 0;});
+  // Highlight peak days (top 10% by cost) in coral
+  var sortedCosts = costs.slice().sort(function(a,b){return b-a;});
+  var peakThreshold = sortedCosts[Math.max(0, Math.floor(sortedCosts.length * 0.1) - 1)] || Infinity;
+  var barColors = costs.map(function(c){
+    return c >= peakThreshold ? 'rgba(255,77,77,.85)' : 'rgba(121,40,202,.55)';
+  });
+  var barBorders = costs.map(function(c){
+    return c >= peakThreshold ? '#ff4d4d' : '#7928ca';
+  });
+  var shortLabels = days.map(function(d){
+    var p = d.split('-');
+    return p.length >= 3 ? p[1] + '-' + p[2] : d;
+  });
+  destroyChart('daily');
+  state.charts.daily = new Chart(qs('#dailyChart'), {
+    data: {
+      labels: shortLabels,
+      datasets: [
+        {
+          type:'bar', label: t('chart_daily_cost'),
+          data: costs,
+          backgroundColor: barColors, borderColor: barBorders, borderWidth: 1,
+          borderRadius: 4, yAxisID: 'y', order: 2
+        },
+        {
+          type:'line', label: t('chart_daily_users'),
+          data: users,
+          borderColor: '#10b981', backgroundColor: '#10b981',
+          pointRadius: 3, pointBackgroundColor:'#10b981', pointBorderColor:'#fff', pointBorderWidth:1,
+          tension: .35, borderWidth: 2.5, fill: false, yAxisID: 'y1', order: 1
+        }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index', intersect:false},
+      plugins:{
+        legend:{display:true, position:'top', labels:{usePointStyle:true, boxWidth:8, padding:14, color:'#4d4d4d'}},
+        datalabels:{display:false},
+        tooltip:{
+          backgroundColor:'#171717', titleColor:'#fff', bodyColor:'#fff',
+          padding:10, cornerRadius:6, displayColors:true,
+          callbacks:{
+            label:function(ctx){
+              if (ctx.dataset.yAxisID === 'y') return ' ' + ctx.dataset.label + ': $' + Number(ctx.parsed.y).toLocaleString(undefined,{maximumFractionDigits:0});
+              return ' ' + ctx.dataset.label + ': ' + ctx.parsed.y + ' ' + t('unit_user');
+            }
+          }
+        }
+      },
+      scales:{
+        x:{grid:{display:false}, ticks:{color:'#888', maxRotation:45, minRotation:45, font:{size:10}}},
+        y:{position:'left', grid:{color:'#ebebeb'},
+          ticks:{color:'#888', callback:function(v){return '$'+Number(v).toLocaleString();}},
+          title:{display:true, text: t('chart_daily_cost'), color:'#888', font:{size:11}}},
+        y1:{position:'right', grid:{display:false},
+          ticks:{color:'#888', callback:function(v){return v + ' ' + t('unit_user');}},
+          title:{display:true, text: t('chart_daily_users'), color:'#888', font:{size:11}},
+          beginAtZero:true}
+      }
+    }
+  });
+
+  var fam = Object.entries(s.byFamily).sort(function(a,b){return b[1]-a[1];});
+  var famTotal = fam.reduce(function(s,x){return s+x[1];},0);
+  destroyChart('family');
+  state.charts.family = new Chart(qs('#familyChart'), {
+    type: 'doughnut',
+    data: {labels: fam.map(function(x){return x[0];}), datasets: [{data: fam.map(function(x){return x[1];}),
+      backgroundColor: fam.map(function(_,i){return PALETTE[i % PALETTE.length];}), borderColor:'#fff', borderWidth:2}]},
+    options: {responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'right'},
+        datalabels:{display:true, color:'#fff', font:{weight:600, size:11},
+          formatter:function(v){return v>0?((v/famTotal*100).toFixed(1)+'%'):'';}
+        }
+      }
+    }
+  });
+
+  var models = Object.entries(s.byModel).sort(function(a,b){return b[1]-a[1];}).slice(0,10);
+  destroyChart('model');
+  state.charts.model = new Chart(qs('#modelChart'), {
+    type: 'bar',
+    data: {labels: models.map(function(x){return x[0];}), datasets: [{label:'AIC cost', data: models.map(function(x){return x[1];}),
+      backgroundColor:'#0070f3', borderRadius:4}]},
+    options: Object.assign({}, chartOpts({y:{ticks:{callback:function(v){return '$'+v;}}}}, true), {
+      plugins:{legend:{display:false},
+        datalabels:{display:true, anchor:'end', align:'top', color:'#171717', font:{size:10, weight:500},
+          formatter:function(v){return '$'+v.toFixed(2);}
+        }
+      }
+    })
+  });
+
+  var orgs = Object.entries(s.byOrg).sort(function(a,b){return b[1]-a[1];});
+  var orgTotal = orgs.reduce(function(s,x){return s+x[1];},0);
+  destroyChart('org');
+  state.charts.org = new Chart(qs('#orgChart'), {
+    type: 'doughnut',
+    data: {labels: orgs.map(function(x){return x[0];}), datasets: [{data: orgs.map(function(x){return x[1];}),
+      backgroundColor: orgs.map(function(_,i){return PALETTE[i % PALETTE.length];}), borderColor:'#fff', borderWidth:2}]},
+    options: {responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'right'},
+        datalabels:{display:true, color:'#fff', font:{weight:600, size:11},
+          formatter:function(v){return v>0?((v/orgTotal*100).toFixed(1)+'%'):'';}
+        }
+      }
+    }
+  });
+}
+
+/* ---- ULB ---- */
+function renderUlb() {
+  var users = state.stats.userArr.map(function(u){return u.aic;});
+  var max = Math.max.apply(null, users.concat([1]));
+  var binSize = max > 100 ? 10 : (max > 30 ? 5 : 2);
+  var binCount = Math.ceil(max / binSize) + 1;
+  var bins = new Array(binCount).fill(0);
+  users.forEach(function(c) { bins[Math.floor(c / binSize)]++; });
+  var labels = bins.map(function(_, i) { return '$' + (i * binSize); });
+  destroyChart('ulbhist');
+  state.charts.ulbhist = new Chart(qs('#ulbHistChart'), {
+    type: 'bar',
+    data: {labels: labels, datasets: [{label: '# users', data: bins, backgroundColor: '#0070f3', borderRadius: 3}]},
+    options: Object.assign({}, chartOpts({y:{ticks:{precision:0}}}, true), {plugins:{legend:{display:false}}})
+  });
+  state.ulbBinSize = binSize;
+  updateUlbStats();
+}
+
+function updateUlbStats(resetPage) {
+  var u = state.ulb;
+  qs('#ulbValue').textContent = u;
+  qs('#ulbSlider').value = u;
+  qs('#ulbInput').value = u;
+  if (resetPage !== false) state.ulbPage = 1;
+  if (!state.stats) return;
+  var arr = state.stats.userArr;
+  var impacted = 0, blocked = 0;
+  var impactedList = [];
+  arr.forEach(function(x) {
+    if (u > 0 && x.aic > u) {
+      impacted++;
+      var saved = x.aic - u;
+      blocked += saved;
+      impactedList.push({user: x.user, org: x.org, aic: x.aic, cap: u, saved: saved});
+    }
+  });
+  var total = state.stats.total;
+  qs('#ulbUsers').textContent = u > 0 ? fmtInt(impacted) : '0';
+  qs('#ulbUsersPct').textContent = u > 0 ? pct(impacted, arr.length) : '0%';
+  qs('#ulbBlocked').textContent = fmtDollar(blocked);
+  qs('#ulbBlockedPct').textContent = pct(blocked, total);
+  qs('#ulbTotal').textContent = fmtDollar(total);
+  if (state.charts.ulbhist) {
+    var bin = state.ulbBinSize;
+    var ds = state.charts.ulbhist.data.datasets[0];
+    ds.backgroundColor = state.charts.ulbhist.data.labels.map(function(_, i) {
+      return (u > 0 && i * bin >= u) ? '#ee0000' : '#0070f3';
+    });
+    state.charts.ulbhist.update();
+  }
+  var wrap = qs('#ulbImpactedWrap');
+  var tb = qs('#ulbImpactedTable tbody');
+  tb.innerHTML = '';
+  if (u > 0 && impactedList.length > 0) {
+    wrap.style.display = '';
+    impactedList.sort(function(a,b){return b.saved - a.saved;});
+    var pageSize = state.ulbPageSize;
+    var totalPages = Math.max(1, Math.ceil(impactedList.length / pageSize));
+    if (state.ulbPage > totalPages) state.ulbPage = totalPages;
+    if (state.ulbPage < 1) state.ulbPage = 1;
+    var start = (state.ulbPage - 1) * pageSize;
+    var slice = impactedList.slice(start, start + pageSize);
+    slice.forEach(function(x, i) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td class="num">' + (start + i + 1) + '</td>' +
+        '<td><code>' + escHtml(x.user) + '</code></td>' +
+        '<td>' + escHtml(x.org || '--') + '</td>' +
+        '<td class="num">' + fmtDollar(x.aic) + '</td>' +
+        '<td class="num">' + fmtDollar(x.cap) + '</td>' +
+        '<td class="num" style="color:var(--error)">' + fmtDollar(x.saved) + '</td>';
+      tb.appendChild(tr);
+    });
+    qs('#ulbImpactedMeta').textContent =
+      t('showing') + ' ' + (slice.length ? start + 1 : 0) + '-' + (start + slice.length) +
+      ' ' + t('of') + ' ' + impactedList.length + ' ' + t('users_filtered') + ' ' + impacted + ' ' + t('total_suffix');
+    renderUlbPager(totalPages);
+  } else {
+    wrap.style.display = 'none';
+    qs('#ulbImpactedMeta').textContent = '';
+    qs('#ulbImpactedPager').innerHTML = '';
+  }
+}
+
+function renderUlbPager(totalPages) {
+  var pager = qs('#ulbImpactedPager');
+  if (!pager) return;
+  if (totalPages <= 1) { pager.innerHTML = ''; return; }
+  var p = state.ulbPage;
+  var parts = [];
+  parts.push('<button class="btn btn-secondary btn-sm" data-ulbpage="prev"' + (p <= 1 ? ' disabled' : '') + '>&larr; ' + t('page_prev') + '</button>');
+  var maxWin = 7;
+  var startP = Math.max(1, p - 3);
+  var endP = Math.min(totalPages, startP + maxWin - 1);
+  startP = Math.max(1, endP - maxWin + 1);
+  if (startP > 1) {
+    parts.push('<button class="btn btn-secondary btn-sm" data-ulbpage="1">1</button>');
+    if (startP > 2) parts.push('<span class="small mono" style="padding:0 6px;color:var(--mute)">...</span>');
+  }
+  for (var i = startP; i <= endP; i++) {
+    var active = i === p ? ' style="background:var(--ink);color:#fff"' : '';
+    parts.push('<button class="btn btn-secondary btn-sm" data-ulbpage="' + i + '"' + active + '>' + i + '</button>');
+  }
+  if (endP < totalPages) {
+    if (endP < totalPages - 1) parts.push('<span class="small mono" style="padding:0 6px;color:var(--mute)">...</span>');
+    parts.push('<button class="btn btn-secondary btn-sm" data-ulbpage="' + totalPages + '">' + totalPages + '</button>');
+  }
+  parts.push('<button class="btn btn-secondary btn-sm" data-ulbpage="next"' + (p >= totalPages ? ' disabled' : '') + '>' + t('page_next') + ' &rarr;</button>');
+  parts.push('<span class="small mono" style="margin-left:auto;color:var(--mute)">' + t('page_of').replace('{p}', p).replace('{n}', totalPages) + '</span>');
+  pager.innerHTML = parts.join('');
+}
+
+
+function renderPareto() {
+  if (!state.stats) return;
+  var arr = state.stats.userArr;
+  var total = state.stats.total;
+  if (total <= 0 || arr.length === 0) return;
+  var cumData = [];
+  var cumSum = 0;
+  arr.forEach(function(u, i) {
+    cumSum += u.aic;
+    cumData.push((cumSum / total * 100));
+  });
+  var labels = arr.map(function(_, i) { return i + 1; });
+  destroyChart('pareto');
+  state.charts.pareto = new Chart(qs('#paretoChart'), {
+    type: 'line',
+    data: {labels: labels, datasets: [{
+      label: 'Cumulative %',
+      data: cumData,
+      borderColor: '#0070f3', backgroundColor: 'rgba(0,112,243,.08)',
+      pointRadius: arr.length > 50 ? 0 : 2, tension: 0.2, fill: true, borderWidth: 2
+    }]},
+    options: Object.assign({}, chartOpts({
+      y: {min: 0, max: 100, ticks: {callback: function(v){return v+'%';}}},
+      x: {title: {display: true, text: 'User rank (by spend)'}, ticks: {maxTicksLimit: 20}}
+    }, true), {plugins: {legend: {display: false}, datalabels: {display: false}}})
+  });
+  updateParetoStats();
+}
+
+function updateParetoStats() {
+  if (!state.stats) return;
+  var arr = state.stats.userArr;
+  var total = state.stats.total;
+  var n = state.paretoN || 20;
+  var topCount = Math.max(1, Math.round(arr.length * n / 100));
+  var topSpend = 0;
+  for (var i = 0; i < topCount && i < arr.length; i++) {
+    topSpend += arr[i].aic;
+  }
+  qs('#paretoValue').textContent = n;
+  qs('#paretoSlider').value = n;
+  qs('#paretoUserCount').textContent = fmtInt(topCount) + ' / ' + fmtInt(arr.length);
+  qs('#paretoSpendPct').textContent = pct(topSpend, total);
+  qs('#paretoSpendAmt').textContent = fmtDollar(topSpend);
+  qs('#paretoTotalSpend').textContent = fmtDollar(total);
+}
+
+/* ---- User table ---- */
+function populateFilters() {
+  var orgs = [];
+  var seen = {};
+  state.stats.userArr.forEach(function(u) {
+    if (u.org && !seen[u.org]) { seen[u.org] = true; orgs.push(u.org); }
+  });
+  orgs.sort();
+  var sel = qs('#orgFilter');
+  sel.innerHTML = '<option value="">All</option>';
+  orgs.forEach(function(o) {
+    var op = document.createElement('option');
+    op.value = o; op.textContent = o; sel.appendChild(op);
+  });
+}
+
+function renderUserTable() {
+  if (!state.stats) return;
+  var u = state.ulb;
+  var arr = state.stats.userArr.slice();
+  var f = state.filters;
+  if (f.q) arr = arr.filter(function(x) { return String(x.user).toLowerCase().indexOf(f.q.toLowerCase()) >= 0; });
+  if (f.org) arr = arr.filter(function(x) { return x.org === f.org; });
+  if (f.over === 'over') arr = arr.filter(function(x) { return u > 0 && x.aic > u; });
+  if (f.over === 'under') arr = arr.filter(function(x) { return !(u > 0 && x.aic > u); });
+  var k = state.sort.key, dir = state.sort.dir === 'asc' ? 1 : -1;
+  arr.sort(function(a, b) {
+    var va = a[k] !== undefined ? a[k] : a.user;
+    var vb = b[k] !== undefined ? b[k] : b.user;
+    if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
+    return String(va).localeCompare(String(vb)) * dir;
+  });
+  var pageSize = state.userPageSize || 20;
+  var totalPages = Math.max(1, Math.ceil(arr.length / pageSize));
+  if (state.userPage > totalPages) state.userPage = totalPages;
+  if (state.userPage < 1) state.userPage = 1;
+  var start = (state.userPage - 1) * pageSize;
+  var slice = arr.slice(start, start + pageSize);
+  var total = state.stats.total;
+  var tb = qs('#userTable tbody');
+  tb.innerHTML = '';
+  slice.forEach(function(x) {
+    var over = u > 0 && x.aic > u;
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td class="num">' + x.rank + '</td>' +
+      '<td><code>' + escHtml(x.user) + '</code></td>' +
+      '<td>' + escHtml(x.org || '--') + '</td>' +
+      '<td class="num">' + fmtDollar(x.aic) + '</td>' +
+      '<td class="num">' + pct(x.aic, total) + '</td>' +
+      '<td>' + (over ? '<span class="badge danger">' + t('badge_over') + '</span>' : '<span class="badge ok">' + t('badge_within') + '</span>') + '</td>';
+    tb.appendChild(tr);
+  });
+  qs('#userTableMeta').textContent =
+    t('showing') + ' ' + (slice.length ? (start + 1) : 0) + '-' + (start + slice.length) +
+    ' ' + t('of') + ' ' + arr.length + ' ' + t('users_filtered') + ' ' + state.stats.userCount + ' ' + t('total_suffix');
+  renderUserPager(totalPages);
+}
+
+function renderUserPager(totalPages) {
+  var pager = qs('#userPager');
+  if (!pager) return;
+  if (totalPages <= 1) { pager.innerHTML = ''; return; }
+  var p = state.userPage;
+  var parts = [];
+  parts.push('<button class="btn btn-secondary btn-sm" data-page="prev"' + (p <= 1 ? ' disabled' : '') + '>&larr; ' + t('page_prev') + '</button>');
+  // Compute window of page numbers
+  var maxWin = 7;
+  var startP = Math.max(1, p - 3);
+  var endP = Math.min(totalPages, startP + maxWin - 1);
+  startP = Math.max(1, endP - maxWin + 1);
+  if (startP > 1) {
+    parts.push('<button class="btn btn-secondary btn-sm" data-page="1">1</button>');
+    if (startP > 2) parts.push('<span class="small mono" style="padding:0 6px;color:var(--mute)">...</span>');
+  }
+  for (var i = startP; i <= endP; i++) {
+    var active = i === p ? ' style="background:var(--ink);color:#fff;border-color:var(--ink)"' : '';
+    parts.push('<button class="btn btn-secondary btn-sm" data-page="' + i + '"' + active + '>' + i + '</button>');
+  }
+  if (endP < totalPages) {
+    if (endP < totalPages - 1) parts.push('<span class="small mono" style="padding:0 6px;color:var(--mute)">...</span>');
+    parts.push('<button class="btn btn-secondary btn-sm" data-page="' + totalPages + '">' + totalPages + '</button>');
+  }
+  parts.push('<button class="btn btn-secondary btn-sm" data-page="next"' + (p >= totalPages ? ' disabled' : '') + '>' + t('page_next') + ' &rarr;</button>');
+  parts.push('<span class="small mono" style="margin-left:auto;color:var(--mute)">' + t('page_of').replace('{p}', p).replace('{n}', totalPages) + '</span>');
+  pager.innerHTML = parts.join('');
+}
+
+function exportUserCSV() {
+  if (!state.stats) return;
+  var u = state.ulb;
+  var arr = state.stats.userArr.slice();
+  var f = state.filters;
+  if (f.q) arr = arr.filter(function(x) { return String(x.user).toLowerCase().indexOf(f.q.toLowerCase()) >= 0; });
+  if (f.org) arr = arr.filter(function(x) { return x.org === f.org; });
+  if (f.over === 'over') arr = arr.filter(function(x) { return u > 0 && x.aic > u; });
+  if (f.over === 'under') arr = arr.filter(function(x) { return !(u > 0 && x.aic > u); });
+  var k = state.sort.key, dir = state.sort.dir === 'asc' ? 1 : -1;
+  arr.sort(function(a, b) {
+    var va = a[k] !== undefined ? a[k] : a.user;
+    var vb = b[k] !== undefined ? b[k] : b.user;
+    if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
+    return String(va).localeCompare(String(vb)) * dir;
+  });
+  var total = state.stats.total;
+  var header = ['rank', 'username', 'organization', 'aic_cost_usd', 'pct_of_total', 'ulb_budget', 'over_ulb'];
+  var rows = [header.join(',')];
+  arr.forEach(function(x) {
+    var over = u > 0 && x.aic > u;
+    rows.push([
+      x.rank,
+      '"' + String(x.user).replace(/"/g, '""') + '"',
+      '"' + String(x.org || '').replace(/"/g, '""') + '"',
+      x.aic.toFixed(4),
+      (total > 0 ? (x.aic / total * 100).toFixed(2) : '0.00') + '%',
+      u > 0 ? u : 'none',
+      over ? 'yes' : 'no'
+    ].join(','));
+  });
+  var blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'copilot-user-breakdown.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportUlbCSV() {
+  if (!state.stats) return;
+  var u = state.ulb;
+  if (u <= 0) return;
+  var arr = state.stats.userArr;
+  var impactedList = [];
+  arr.forEach(function(x) {
+    if (x.aic > u) {
+      impactedList.push({user: x.user, org: x.org, aic: x.aic, cap: u, saved: x.aic - u});
+    }
+  });
+  if (impactedList.length === 0) return;
+  impactedList.sort(function(a, b) { return b.saved - a.saved; });
+  var header = ['rank', 'username', 'organization', 'actual_cost_usd', 'capped_at_usd', 'savings_usd'];
+  var rows = [header.join(',')];
+  impactedList.forEach(function(x, i) {
+    rows.push([
+      i + 1,
+      '"' + String(x.user).replace(/"/g, '""') + '"',
+      '"' + String(x.org || '').replace(/"/g, '""') + '"',
+      x.aic.toFixed(4),
+      x.cap.toFixed(2),
+      x.saved.toFixed(4)
+    ].join(','));
+  });
+  var blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'copilot-ulb-impacted-users.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function loadFromText(text) {
+  parseCsv(text, function(err, out) {
+    if (err) { alert('CSV parse failed: ' + err.message); return; }
+    state.rows = out.rows;
+    state.headers = out.headers;
+    state.stats = analyze(state.rows, state.headers);
+    renderAll();
+  });
+}
+
+function loadFromFile(file) {
+  if (!file) return;
+  var fr = new FileReader();
+  fr.onload = function(e) { loadFromText(e.target.result); };
+  fr.onerror = function() { alert('Failed to read file.'); };
+  fr.readAsText(file);
+}
+
+function openFileDialog() {
+  var inp = document.getElementById('fileInput');
+  inp.value = '';
+  inp.click();
+}
+
+function resetApp() {
+  state.rows = [];
+  state.headers = [];
+  state.stats = null;
+  qs('#results').classList.add('hidden');
+  qs('#uploadBlock').classList.remove('hidden');
+  qs('#navUpload').classList.remove('hidden');
+  qs('#navReset').classList.add('hidden');
+  for (var k in state.charts) {
+    try { state.charts[k].destroy(); } catch(e) {}
+    delete state.charts[k];
+  }
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ---- Wire up events ---- */
+document.addEventListener('DOMContentLoaded', function() {
+  var fi = document.getElementById('fileInput');
+  fi.addEventListener('change', function(e) {
+    var f = e.target.files && e.target.files[0];
+    if (f) loadFromFile(f);
+  });
+
+  var dz = document.getElementById('dropZone');
+  dz.addEventListener('click', function(e) {
+    if (e.target.closest('button')) return;
+    openFileDialog();
+  });
+  dz.addEventListener('dragover', function(e) { e.preventDefault(); dz.classList.add('drag'); });
+  dz.addEventListener('dragleave', function() { dz.classList.remove('drag'); });
+  dz.addEventListener('drop', function(e) {
+    e.preventDefault(); dz.classList.remove('drag');
+    var f = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) loadFromFile(f);
+  });
+
+  document.getElementById('chooseBtn').addEventListener('click', function(e) { e.stopPropagation(); openFileDialog(); });
+  document.getElementById('sampleBtn').addEventListener('click', function(e) { e.stopPropagation(); loadFromText(SAMPLE_CSV); });
+  document.getElementById('navUpload').addEventListener('click', function() { openFileDialog(); });
+  document.getElementById('navReset').addEventListener('click', function() { resetApp(); });
+  document.getElementById('heroUpload').addEventListener('click', function() { openFileDialog(); });
+  document.getElementById('heroSample').addEventListener('click', function() { loadFromText(SAMPLE_CSV); });
+  document.getElementById('langToggle').addEventListener('click', function() { toggleLang(); });
+
+  document.getElementById('toggleSchemaBtn').addEventListener('click', function() {
+    toggleSchema();
+  });
+  document.addEventListener('click', function(e) {
+    var b = e.target.closest('#schemaModeBtn');
+    if (b) toggleSchemaMode();
+  });
+
+  document.getElementById('ulbSlider').addEventListener('input', function(e) { state.ulb = parseFloat(e.target.value) || 0; updateUlbStats(); });
+  document.getElementById('ulbInput').addEventListener('input', function(e) { state.ulb = parseFloat(e.target.value) || 0; updateUlbStats(); });
+  qsa('.ulb-quick button').forEach(function(b) {
+    b.addEventListener('click', function() { state.ulb = parseFloat(b.dataset.ulb) || 0; updateUlbStats(); });
+  });
+
+  document.getElementById('paretoSlider').addEventListener('input', function(e) { state.paretoN = parseInt(e.target.value) || 20; updateParetoStats(); });
+  qsa('[data-pareto]').forEach(function(b) {
+    b.addEventListener('click', function() { state.paretoN = parseInt(b.dataset.pareto) || 20; updateParetoStats(); });
+  });
+
+  document.getElementById('userSearch').addEventListener('input', function(e) { state.filters.q = e.target.value; state.userPage = 1; renderUserTable(); });
+  document.getElementById('orgFilter').addEventListener('change', function(e) { state.filters.org = e.target.value; state.userPage = 1; renderUserTable(); });
+  document.getElementById('overFilter').addEventListener('change', function(e) { state.filters.over = e.target.value; state.userPage = 1; renderUserTable(); });
+  document.getElementById('exportUserCsv').addEventListener('click', function() { exportUserCSV(); });
+  document.getElementById('exportUlbCsv').addEventListener('click', function() { exportUlbCSV(); });
+
+  document.getElementById('userPager').addEventListener('click', function(e) {
+    var b = e.target.closest('button[data-page]');
+    if (!b || b.disabled) return;
+    var p = b.dataset.page;
+    if (p === 'prev') state.userPage = Math.max(1, state.userPage - 1);
+    else if (p === 'next') state.userPage = state.userPage + 1;
+    else state.userPage = parseInt(p) || 1;
+    renderUserTable();
+  });
+
+  document.getElementById('ulbImpactedPager').addEventListener('click', function(e) {
+    var b = e.target.closest('button[data-ulbpage]');
+    if (!b || b.disabled) return;
+    var p = b.dataset.ulbpage;
+    if (p === 'prev') state.ulbPage = Math.max(1, state.ulbPage - 1);
+    else if (p === 'next') state.ulbPage = state.ulbPage + 1;
+    else state.ulbPage = parseInt(p) || 1;
+    updateUlbStats(false);
+  });
+
+  qsa('#userTable th[data-sort]').forEach(function(th) {
+    th.style.cursor = 'pointer';
+    th.addEventListener('click', function() {
+      var k = th.dataset.sort;
+      if (state.sort.key === k) state.sort.dir = state.sort.dir === 'asc' ? 'desc' : 'asc';
+      else { state.sort.key = k; state.sort.dir = (k === 'aic' || k === 'pru' || k === 'rank') ? 'desc' : 'asc'; }
+      state.userPage = 1;
+      renderUserTable();
+    });
+  });
+
+  applyI18n();
+});
+</script>
+</body>
+</html>
