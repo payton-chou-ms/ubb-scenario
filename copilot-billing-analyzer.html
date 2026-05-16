@@ -432,11 +432,74 @@ footer .footer-inner{display:flex;justify-content:space-between;align-items:cent
     </div>
   </section>
 
-  <!-- 06 Scenarios (link only) -->
+  <!-- 06 Org Insights -->
   <section class="block">
     <div class="container">
       <div class="section-head">
-        <span class="eyebrow">06 &mdash; <span data-i18n="sec_scenarios">Scenarios</span></span>
+        <span class="eyebrow">06 &mdash; <span data-i18n="sec_org">Org Insights</span></span>
+        <h2 data-i18n="org_title">Organization breakdown.</h2>
+        <p data-i18n="org_desc">Compare orgs side-by-side: spend share, headcount, per-user efficiency, model mix, and ULB sensitivity.</p>
+      </div>
+
+      <div class="grid grid-2 mb-24">
+        <div class="kpi">
+          <div class="label" data-i18n="org_kpi_count">Organizations</div>
+          <div class="value num" id="orgKpiCount">--</div>
+          <div class="delta" id="orgKpiCountDelta"></div>
+        </div>
+        <div class="kpi">
+          <div class="label" data-i18n="org_kpi_top_share">Top org share</div>
+          <div class="value num" id="orgKpiTopShare">--</div>
+          <div class="delta" id="orgKpiTopShareDelta"></div>
+        </div>
+      </div>
+
+      <div class="card card-lg elev mb-24">
+        <div class="toggle-row">
+          <h4 data-i18n="org_chart_mix_title">Model family mix by organization</h4>
+          <span class="small mono" data-i18n="org_chart_mix_note">Top 8 orgs &middot; 100% stacked by AIC spend</span>
+        </div>
+        <div class="chart-box tall"><canvas id="orgMixChart"></canvas></div>
+        <p class="small mt-16" data-i18n="org_chart_mix_help">Orgs leaning on Claude Opus (10x multiplier) sit at the high-cost end; orgs heavy on GPT-5 mini are the lowest-cost mix.</p>
+      </div>
+
+      <div class="card card-lg elev">
+        <div class="toggle-row">
+          <h4 data-i18n="org_table_title">Org leaderboard (ULB-aware)</h4>
+          <span class="small mono" id="orgTableUlbHint"></span>
+        </div>
+        <div class="table-wrap">
+          <table id="orgTable">
+            <thead><tr>
+              <th>#</th>
+              <th data-i18n="org_th_name">Organization</th>
+              <th class="num" data-i18n="org_th_spend">AIC spend</th>
+              <th class="num" data-i18n="org_th_pct">% of total</th>
+              <th class="num" data-i18n="org_th_users">Users</th>
+              <th class="num" data-i18n="org_th_per_user">$ / user</th>
+              <th data-i18n="org_th_top_user">Top user</th>
+              <th data-i18n="org_th_top_family">Top family</th>
+              <th class="num" data-i18n="org_th_ulb_impacted">ULB impacted</th>
+              <th class="num" data-i18n="org_th_ulb_blocked">Spend blocked</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="small mt-16" data-i18n="org_table_note">"ULB impacted" and "Spend blocked" reflect the current ULB cap set in section 05. Adjust the slider above to see policy impact per org in real time.</p>
+        <p class="small mt-8" id="orgTableMeta"></p>
+        <div class="row mt-16" style="gap:8px;align-items:center;flex-wrap:wrap">
+          <div id="orgPager" class="row" style="flex-wrap:wrap;gap:6px;align-items:center"></div>
+          <button class="btn btn-secondary btn-sm" id="exportOrgCsv" data-i18n="btn_export_org_csv">Export org leaderboard (.csv)</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 07 Scenarios (link only) -->
+  <section class="block">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">07 &mdash; <span data-i18n="sec_scenarios">Scenarios</span></span>
         <h2 data-i18n="scenario_title">Billing scenario simulator.</h2>
         <p data-i18n="scenario_desc">Need to estimate costs under different UBB configurations? Use the interactive scenario calculator below.</p>
       </div>
@@ -596,6 +659,28 @@ var I18N = {
     th_ulb_status: 'ULB status',
     btn_export_csv: 'Export current view (.csv)',
     btn_export_ulb_csv: 'Export impacted users (.csv)',
+    sec_org: 'Org Insights',
+    org_title: 'Organization breakdown.',
+    org_desc: 'Compare orgs side-by-side: spend share, headcount, per-user efficiency, model mix, and ULB sensitivity.',
+    org_kpi_count: 'Organizations',
+    org_kpi_top_share: 'Top org share',
+    org_chart_mix_title: 'Model family mix by organization',
+    org_chart_mix_note: 'Top 8 orgs · 100% stacked by AIC spend',
+    org_chart_mix_help: 'Orgs leaning on Claude Opus (10x multiplier) sit at the high-cost end; orgs heavy on GPT-5 mini are the lowest-cost mix.',
+    org_table_title: 'Org leaderboard (ULB-aware)',
+    org_table_note: '"ULB impacted" and "Spend blocked" reflect the current ULB cap set in section 05. Adjust the slider above to see policy impact per org in real time.',
+    org_table_ulb_hint: 'ULB = ${cap} / user',
+    org_table_ulb_off: 'ULB cap off',
+    org_th_name: 'Organization',
+    org_th_spend: 'AIC spend',
+    org_th_pct: '% of total',
+    org_th_users: 'Users',
+    org_th_per_user: '$ / user',
+    org_th_top_user: 'Top user',
+    org_th_top_family: 'Top family',
+    org_th_ulb_impacted: 'ULB impacted',
+    org_th_ulb_blocked: 'Spend blocked',
+    btn_export_org_csv: 'Export org leaderboard (.csv)',
     sec_ref: 'References',
     ref_title: 'UBB billing knowledge base.',
     ref_desc: "Primary sources behind this analyzer's column dictionary and scenario logic.",
@@ -711,6 +796,28 @@ var I18N = {
     th_ulb_status: 'ULB \u72C0\u614B',
     btn_export_csv: '\u532F\u51FA\u76EE\u524D\u6AA2\u8996\u7D50\u679C (.csv)',
     btn_export_ulb_csv: '\u532F\u51FA\u53D7\u5F71\u97FF\u4F7F\u7528\u8005 (.csv)',
+    sec_org: '\u7D44\u7E54\u6D1E\u5BDF',
+    org_title: '\u7D44\u7E54\u9010\u500B\u62C6\u89E3\u3002',
+    org_desc: '\u4E26\u6392\u6BD4\u8F03\u5404\u7D44\u7E54\uFF1A\u82B1\u8CBB\u4F54\u6BD4\u3001\u4F7F\u7528\u4EBA\u6578\u3001\u6BCF\u4EBA\u6548\u7387\u3001\u6A21\u578B\u7D44\u5408\u3001\u4EE5\u53CA\u5C0D ULB \u653F\u7B56\u7684\u654F\u611F\u5EA6\u3002',
+    org_kpi_count: '\u7D44\u7E54\u6578',
+    org_kpi_top_share: '\u9802\u7D1A\u7D44\u7E54\u4F54\u6BD4',
+    org_chart_mix_title: '\u5404\u7D44\u7E54\u7684\u6A21\u578B\u5BB6\u65CF\u7D44\u5408',
+    org_chart_mix_note: '\u524D 8 \u500B\u7D44\u7E54 \u00B7 \u4EE5 AIC \u82B1\u8CBB 100% \u5806\u758A',
+    org_chart_mix_help: '\u504F\u91CD Claude Opus\uFF0810x \u500D\u7387\uFF09\u7684\u7D44\u7E54\u4F4D\u65BC\u9AD8\u6210\u672C\u7AEF\uFF1B\u504F\u91CD GPT-5 mini \u7684\u7D44\u7E54\u662F\u6700\u4F4E\u6210\u672C\u7D44\u5408\u3002',
+    org_table_title: '\u7D44\u7E54\u6392\u884C\u699C\uFF08\u8DDF\u96A8 ULB\uFF09',
+    org_table_note: '\u300CULB \u53D7\u5F71\u97FF\u300D\u8207\u300C\u88AB\u963B\u64CB\u82B1\u8CBB\u300D\u6703\u4F9D\u7167 05 \u5340\u584A\u8A2D\u5B9A\u7684 ULB \u4E0A\u9650\u8A08\u7B97\u3002\u8ABF\u6574\u4E0A\u65B9\u6ED1\u687F\u5373\u53EF\u5373\u6642\u770B\u51FA\u6BCF\u500B\u7D44\u7E54\u53D7\u653F\u7B56\u5F71\u97FF\u7684\u7A0B\u5EA6\u3002',
+    org_table_ulb_hint: 'ULB = ${cap} / \u4EBA',
+    org_table_ulb_off: '\u672A\u8A2D\u5B9A ULB \u4E0A\u9650',
+    org_th_name: '\u7D44\u7E54',
+    org_th_spend: 'AIC \u82B1\u8CBB',
+    org_th_pct: '\u4F54\u7E3D\u91D1\u984D',
+    org_th_users: '\u4F7F\u7528\u4EBA\u6578',
+    org_th_per_user: '\u6BCF\u4EBA $',
+    org_th_top_user: '\u9802\u5C16\u7528\u6236',
+    org_th_top_family: '\u4E3B\u8981\u6A21\u578B\u5BB6\u65CF',
+    org_th_ulb_impacted: 'ULB \u53D7\u5F71\u97FF',
+    org_th_ulb_blocked: '\u88AB\u963B\u64CB\u82B1\u8CBB',
+    btn_export_org_csv: '\u532F\u51FA\u7D44\u7E54\u6392\u884C\u699C (.csv)',
     sec_ref: '\u53C3\u8003\u8CC7\u6599',
     ref_title: 'UBB \u8A08\u8CBB\u77E5\u8B58\u5EAB\u3002',
     ref_desc: '\u672C\u5206\u6790\u5668\u7684\u6B04\u4F4D\u5B57\u5178\u8207\u60C5\u5883\u908F\u8F2F\u4E3B\u8981\u53C3\u8003\u4F86\u6E90\u3002',
@@ -917,7 +1024,69 @@ var SAMPLE_CSV = [
   '2026-04-28T14:15:00Z,user-23,Copilot - Premium request,24,PRU,0.04,10,sample-enterprise,Organization,9.60,Claude Opus 4.7,Business',
   '2026-04-29T09:05:00Z,user-27,Copilot - Premium request,38,PRU,0.04,10,sample-enterprise,Organization,15.20,Claude Opus 4.7,Business',
   '2026-04-30T11:30:00Z,user-03,Copilot - Premium request,14,PRU,0.04,1,sample-enterprise,Organization,0.56,GPT-5,Business',
-  '2026-04-30T15:00:00Z,user-08,Copilot - Premium request,16,PRU,0.04,2.5,sample-enterprise,Organization,1.60,Claude Sonnet 4.6,Business'
+  '2026-04-30T15:00:00Z,user-08,Copilot - Premium request,16,PRU,0.04,2.5,sample-enterprise,Organization,1.60,Claude Sonnet 4.6,Business',
+  // acme-corp - GPT-heavy / low-cost profile (30 users)
+  '2026-04-01T08:30:00Z,acme-user-01,Copilot - Premium request,5,PRU,0.04,1,acme-corp,Organization,0.20,GPT-5 mini,Business',
+  '2026-04-01T10:15:00Z,acme-user-02,Copilot - Premium request,12,PRU,0.04,1,acme-corp,Organization,0.48,GPT-5,Business',
+  '2026-04-02T09:20:00Z,acme-user-03,Copilot - Premium request,8,PRU,0.04,1,acme-corp,Organization,0.32,GPT-5 mini,Business',
+  '2026-04-02T13:40:00Z,acme-user-04,Copilot - Premium request,15,PRU,0.04,1,acme-corp,Organization,0.60,GPT-4.1,Business',
+  '2026-04-03T08:50:00Z,acme-user-05,Copilot - Premium request,6,PRU,0.04,1,acme-corp,Organization,0.24,GPT-5 mini,Business',
+  '2026-04-03T11:30:00Z,acme-user-06,Copilot - Premium request,20,PRU,0.04,1,acme-corp,Organization,0.80,GPT-5,Business',
+  '2026-04-04T09:00:00Z,acme-user-07,Copilot - Premium request,4,PRU,0.04,1,acme-corp,Organization,0.16,GPT-5 mini,Business',
+  '2026-04-04T14:10:00Z,acme-user-08,Copilot - Premium request,18,PRU,0.04,1,acme-corp,Organization,0.72,GPT-5,Business',
+  '2026-04-05T08:25:00Z,acme-user-09,Copilot - Premium request,10,PRU,0.04,1,acme-corp,Organization,0.40,GPT-5 mini,Business',
+  '2026-04-07T10:00:00Z,acme-user-10,Copilot - Premium request,25,PRU,0.04,1,acme-corp,Organization,1.00,GPT-5,Business',
+  '2026-04-07T12:45:00Z,acme-user-11,Copilot - Premium request,7,PRU,0.04,1,acme-corp,Organization,0.28,GPT-4.1,Business',
+  '2026-04-08T09:15:00Z,acme-user-12,Copilot - Premium request,11,PRU,0.04,1,acme-corp,Organization,0.44,GPT-5,Business',
+  '2026-04-08T13:30:00Z,acme-user-13,Copilot - Premium request,3,PRU,0.04,1,acme-corp,Organization,0.12,GPT-5 mini,Business',
+  '2026-04-09T08:40:00Z,acme-user-14,Copilot - Premium request,14,PRU,0.04,1,acme-corp,Organization,0.56,GPT-5,Business',
+  '2026-04-09T15:00:00Z,acme-user-15,Copilot - Premium request,9,PRU,0.04,1,acme-corp,Organization,0.36,GPT-4.1,Business',
+  '2026-04-10T09:50:00Z,acme-user-16,Copilot - Premium request,22,PRU,0.04,1,acme-corp,Organization,0.88,GPT-5,Business',
+  '2026-04-11T11:20:00Z,acme-user-17,Copilot - Premium request,8,PRU,0.04,2.5,acme-corp,Organization,0.80,Claude Sonnet 4.6,Business',
+  '2026-04-14T08:35:00Z,acme-user-18,Copilot - Premium request,5,PRU,0.04,1,acme-corp,Organization,0.20,GPT-5 mini,Business',
+  '2026-04-14T13:15:00Z,acme-user-19,Copilot - Premium request,30,PRU,0.04,1,acme-corp,Organization,1.20,GPT-5,Business',
+  '2026-04-15T09:25:00Z,acme-user-20,Copilot - Premium request,12,PRU,0.04,1,acme-corp,Organization,0.48,GPT-5 mini,Business',
+  '2026-04-15T14:45:00Z,acme-user-21,Copilot - Premium request,16,PRU,0.04,1,acme-corp,Organization,0.64,GPT-5,Business',
+  '2026-04-16T10:10:00Z,acme-user-22,Copilot - Premium request,6,PRU,0.04,2.5,acme-corp,Organization,0.60,Claude Sonnet 4.6,Business',
+  '2026-04-17T09:30:00Z,acme-user-23,Copilot - Premium request,40,PRU,0.04,1,acme-corp,Organization,1.60,GPT-5,Business',
+  '2026-04-18T11:00:00Z,acme-user-24,Copilot - Premium request,8,PRU,0.04,1,acme-corp,Organization,0.32,GPT-4.1,Business',
+  '2026-04-21T08:55:00Z,acme-user-25,Copilot - Premium request,10,PRU,0.04,1,acme-corp,Organization,0.40,GPT-5,Business',
+  '2026-04-22T13:20:00Z,acme-user-26,Copilot - Premium request,35,PRU,0.04,1,acme-corp,Organization,1.40,GPT-5,Business',
+  '2026-04-23T09:40:00Z,acme-user-27,Copilot - Premium request,7,PRU,0.04,1,acme-corp,Organization,0.28,GPT-5 mini,Business',
+  '2026-04-24T14:30:00Z,acme-user-28,Copilot - Premium request,15,PRU,0.04,1,acme-corp,Organization,0.60,GPT-5,Business',
+  '2026-04-25T08:20:00Z,acme-user-29,Copilot - Premium request,9,PRU,0.04,1,acme-corp,Organization,0.36,GPT-4.1,Business',
+  '2026-04-28T11:50:00Z,acme-user-30,Copilot - Premium request,11,PRU,0.04,2.5,acme-corp,Organization,1.10,Claude Sonnet 4.6,Business',
+  // globex-inc - Sonnet-heavy with a few Opus power users (30 users)
+  '2026-04-01T09:00:00Z,globex-user-01,Copilot - Premium request,20,PRU,0.04,2.5,globex-inc,Organization,2.00,Claude Sonnet 4.6,Business',
+  '2026-04-01T13:15:00Z,globex-user-02,Copilot - Premium request,15,PRU,0.04,2.5,globex-inc,Organization,1.50,Claude Sonnet 4.6,Business',
+  '2026-04-02T08:40:00Z,globex-user-03,Copilot - Premium request,8,PRU,0.04,1,globex-inc,Organization,0.32,GPT-5,Business',
+  '2026-04-02T11:25:00Z,globex-user-04,Copilot - Premium request,25,PRU,0.04,2.5,globex-inc,Organization,2.50,Claude Sonnet 4.6,Business',
+  '2026-04-03T09:50:00Z,globex-user-05,Copilot - Premium request,30,PRU,0.04,10,globex-inc,Organization,12.00,Claude Opus 4.7,Business',
+  '2026-04-04T10:15:00Z,globex-user-06,Copilot - Premium request,18,PRU,0.04,2.5,globex-inc,Organization,1.80,Claude Sonnet 4.6,Business',
+  '2026-04-04T15:30:00Z,globex-user-07,Copilot - Premium request,12,PRU,0.04,1,globex-inc,Organization,0.48,GPT-5,Business',
+  '2026-04-05T08:00:00Z,globex-user-08,Copilot - Premium request,22,PRU,0.04,2.5,globex-inc,Organization,2.20,Claude Sonnet 4.6,Business',
+  '2026-04-07T09:30:00Z,globex-user-09,Copilot - Premium request,40,PRU,0.04,10,globex-inc,Organization,16.00,Claude Opus 4.7,Business',
+  '2026-04-07T14:05:00Z,globex-user-10,Copilot - Premium request,14,PRU,0.04,2.5,globex-inc,Organization,1.40,Claude Sonnet 4.6,Business',
+  '2026-04-08T10:45:00Z,globex-user-11,Copilot - Premium request,9,PRU,0.04,1,globex-inc,Organization,0.36,GPT-5,Business',
+  '2026-04-08T13:50:00Z,globex-user-12,Copilot - Premium request,28,PRU,0.04,2.5,globex-inc,Organization,2.80,Claude Sonnet 4.6,Business',
+  '2026-04-09T09:10:00Z,globex-user-13,Copilot - Premium request,16,PRU,0.04,2.5,globex-inc,Organization,1.60,Claude Sonnet 4.6,Business',
+  '2026-04-10T08:20:00Z,globex-user-14,Copilot - Premium request,35,PRU,0.04,10,globex-inc,Organization,14.00,Claude Opus 4.7,Business',
+  '2026-04-10T13:40:00Z,globex-user-15,Copilot - Premium request,10,PRU,0.04,2.5,globex-inc,Organization,1.00,Claude Sonnet 4.6,Business',
+  '2026-04-11T09:55:00Z,globex-user-16,Copilot - Premium request,5,PRU,0.04,1,globex-inc,Organization,0.20,GPT-5 mini,Business',
+  '2026-04-14T10:30:00Z,globex-user-17,Copilot - Premium request,24,PRU,0.04,2.5,globex-inc,Organization,2.40,Claude Sonnet 4.6,Business',
+  '2026-04-15T08:15:00Z,globex-user-18,Copilot - Premium request,11,PRU,0.04,1,globex-inc,Organization,0.44,GPT-5,Business',
+  '2026-04-15T14:25:00Z,globex-user-19,Copilot - Premium request,20,PRU,0.04,2.5,globex-inc,Organization,2.00,Claude Sonnet 4.6,Business',
+  '2026-04-16T09:00:00Z,globex-user-20,Copilot - Premium request,32,PRU,0.04,10,globex-inc,Organization,12.80,Claude Opus 4.7,Business',
+  '2026-04-17T11:10:00Z,globex-user-21,Copilot - Premium request,17,PRU,0.04,2.5,globex-inc,Organization,1.70,Claude Sonnet 4.6,Business',
+  '2026-04-18T08:50:00Z,globex-user-22,Copilot - Premium request,13,PRU,0.04,1,globex-inc,Organization,0.52,GPT-5,Business',
+  '2026-04-21T10:20:00Z,globex-user-23,Copilot - Premium request,26,PRU,0.04,2.5,globex-inc,Organization,2.60,Claude Sonnet 4.6,Business',
+  '2026-04-22T09:35:00Z,globex-user-24,Copilot - Premium request,8,PRU,0.04,1,globex-inc,Organization,0.32,GPT-4.1,Business',
+  '2026-04-23T13:00:00Z,globex-user-25,Copilot - Premium request,21,PRU,0.04,2.5,globex-inc,Organization,2.10,Claude Sonnet 4.6,Business',
+  '2026-04-24T10:40:00Z,globex-user-26,Copilot - Premium request,7,PRU,0.04,1,globex-inc,Organization,0.28,GPT-5 mini,Business',
+  '2026-04-25T09:15:00Z,globex-user-27,Copilot - Premium request,19,PRU,0.04,2.5,globex-inc,Organization,1.90,Claude Sonnet 4.6,Business',
+  '2026-04-28T08:30:00Z,globex-user-28,Copilot - Premium request,15,PRU,0.04,2.5,globex-inc,Organization,1.50,Claude Sonnet 4.6,Business',
+  '2026-04-29T11:45:00Z,globex-user-29,Copilot - Premium request,23,PRU,0.04,2.5,globex-inc,Organization,2.30,Claude Sonnet 4.6,Business',
+  '2026-04-30T13:10:00Z,globex-user-30,Copilot - Premium request,12,PRU,0.04,1,globex-inc,Organization,0.48,GPT-5,Business'
 ].join('\n');
 
 /* ---- State ---- */
@@ -929,6 +1098,7 @@ var state = {
   ulbBinSize: 5,
   userPage: 1, userPageSize: 20,
   ulbPage: 1, ulbPageSize: 20,
+  orgPage: 1, orgPageSize: 20,
   schemaMode: 'detected'
 };
 
@@ -982,6 +1152,7 @@ function analyze(rows, headers) {
   var cQuota = pickCol(headers, ['total_monthly_quota','quota','monthly_quota','Total Monthly Quota']);
 
   var byUser = {}, byDay = {}, byDayUsers = {}, byModel = {}, byFamily = {}, byOrg = {};
+  var byOrgUsers = {}, byOrgFamily = {}, byOrgTopUser = {};
   var total = 0, quotaHits = 0;
   // Unlicensed (total_monthly_quota=0) bucket: tracked separately, excluded from headlines
   // to match GitHub's official Billing Preview behavior.
@@ -1028,6 +1199,10 @@ function analyze(rows, headers) {
     fam = familyOf(mdl);
     byFamily[fam] = (byFamily[fam] || 0) + cost;
     byOrg[org] = (byOrg[org] || 0) + cost;
+    if (!byOrgUsers[org]) byOrgUsers[org] = {};
+    byOrgUsers[org][u] = 1;
+    if (!byOrgFamily[org]) byOrgFamily[org] = {};
+    byOrgFamily[org][fam] = (byOrgFamily[org][fam] || 0) + cost;
     total += cost;
     if (/^(true|1|yes)$/i.test(String(note).trim()) || /quota|exceed|limit/i.test(note)) quotaHits++;
   }
@@ -1041,12 +1216,43 @@ function analyze(rows, headers) {
   // Users that are unlicensed-only (never appear in any licensed row).
   var unlicensedOnlyCount = 0;
   for (var uu in unlicensedUsers) { if (!byUser[uu]) unlicensedOnlyCount++; }
+
+  // Build per-org summaries (top user + top family + user count + $/user).
+  userArr.forEach(function(x){
+    var o = x.org || 'unknown';
+    if (!byOrgTopUser[o] || x.aic > byOrgTopUser[o].aic) byOrgTopUser[o] = x;
+  });
+  var orgArr = [];
+  Object.keys(byOrg).forEach(function(o){
+    var spend = byOrg[o];
+    var users = byOrgUsers[o] ? Object.keys(byOrgUsers[o]).length : 0;
+    var fams = byOrgFamily[o] || {};
+    var topFam = null, topFamCost = -1;
+    Object.keys(fams).forEach(function(f){
+      if (fams[f] > topFamCost) { topFamCost = fams[f]; topFam = f; }
+    });
+    orgArr.push({
+      org: o,
+      spend: spend,
+      users: users,
+      perUser: users > 0 ? spend / users : 0,
+      topUser: byOrgTopUser[o] ? byOrgTopUser[o].user : '',
+      topUserSpend: byOrgTopUser[o] ? byOrgTopUser[o].aic : 0,
+      topFamily: topFam || '',
+      topFamilyPct: spend > 0 ? topFamCost / spend : 0,
+      familyMix: fams
+    });
+  });
+  orgArr.sort(function(a, b){ return b.spend - a.spend; });
+  orgArr.forEach(function(x, idx){ x.rank = idx + 1; });
+
   return {
     total: total, quotaHits: quotaHits, userCount: userArr.length,
     modelCount: Object.keys(byModel).length,
     dateRange: [dates[0] || '', dates[dates.length - 1] || ''],
     byDay: byDay, byDayUsers: byDayUserCount,
     byModel: byModel, byFamily: byFamily, byOrg: byOrg, userArr: userArr,
+    orgArr: orgArr, byOrgUsers: byOrgUsers, byOrgFamily: byOrgFamily,
     unlicensed: {
       total: unlicensedTotal,
       rows: unlicensedRows,
@@ -1071,6 +1277,7 @@ function renderAll() {
   renderUserTable();
   renderPareto();
   renderUlb();
+  renderOrg();
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
@@ -1376,6 +1583,7 @@ function updateUlbStats(resetPage) {
   qs('#ulbBlocked').textContent = fmtDollar(blocked);
   qs('#ulbBlockedPct').textContent = pct(blocked, total);
   qs('#ulbTotal').textContent = fmtDollar(total);
+  if (state.stats.orgArr) updateOrgUlb();
   if (state.charts.ulbhist) {
     var bin = state.ulbBinSize;
     var ds = state.charts.ulbhist.data.datasets[0];
@@ -1491,6 +1699,188 @@ function updateParetoStats() {
   qs('#paretoSpendPct').textContent = pct(topSpend, total);
   qs('#paretoSpendAmt').textContent = fmtDollar(topSpend);
   qs('#paretoTotalSpend').textContent = fmtDollar(total);
+}
+
+/* ---- Org Insights ---- */
+function renderOrg() {
+  if (!state.stats) return;
+  var s = state.stats;
+  var orgs = s.orgArr || [];
+
+  qs('#orgKpiCount').textContent = fmtInt(orgs.length);
+  var top = orgs[0];
+  qs('#orgKpiTopShare').textContent = top ? pct(top.spend, s.total) : '0%';
+  qs('#orgKpiTopShareDelta').textContent = top ? top.org : '';
+
+  // Stacked 100% family-mix chart for top N orgs
+  var topN = orgs.slice(0, 8);
+  var famSet = {};
+  topN.forEach(function(o){ Object.keys(o.familyMix).forEach(function(f){ famSet[f] = (famSet[f] || 0) + o.familyMix[f]; }); });
+  var families = Object.keys(famSet).sort(function(a, b){ return famSet[b] - famSet[a]; });
+  var labels = topN.map(function(o){ return o.org; });
+  var datasets = families.map(function(f, idx){
+    return {
+      label: f,
+      data: topN.map(function(o){
+        var total = o.spend || 1;
+        return ((o.familyMix[f] || 0) / total * 100);
+      }),
+      backgroundColor: PALETTE[idx % PALETTE.length],
+      borderWidth: 0,
+      stack: 'mix'
+    };
+  });
+  destroyChart('orgmix');
+  state.charts.orgmix = new Chart(qs('#orgMixChart'), {
+    type: 'bar',
+    data: {labels: labels, datasets: datasets},
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {position: 'bottom', labels: {boxWidth: 10, font: {size: 11}}},
+        datalabels: {display: false},
+        tooltip: {
+          callbacks: {
+            label: function(ctx){
+              var o = topN[ctx.dataIndex];
+              var fam = ctx.dataset.label;
+              var costPart = (o.familyMix[fam] || 0);
+              return fam + ': ' + ctx.parsed.x.toFixed(1) + '% (' + fmtDollar(costPart) + ')';
+            }
+          }
+        }
+      },
+      scales: {
+        x: {stacked: true, max: 100, ticks: {callback: function(v){return v + '%';}}},
+        y: {stacked: true}
+      }
+    }
+  });
+
+  updateOrgUlb();
+}
+
+function updateOrgUlb() {
+  if (!state.stats) return;
+  var s = state.stats;
+  var orgs = s.orgArr || [];
+  var u = state.ulb;
+  // ULB rollup per org from userArr
+  var byOrgUlb = {};
+  s.userArr.forEach(function(x){
+    var o = x.org || 'unknown';
+    if (!byOrgUlb[o]) byOrgUlb[o] = {impacted: 0, blocked: 0};
+    if (u > 0 && x.aic > u) {
+      byOrgUlb[o].impacted++;
+      byOrgUlb[o].blocked += (x.aic - u);
+    }
+  });
+  var hint = qs('#orgTableUlbHint');
+  if (hint) hint.textContent = u > 0 ? t('org_table_ulb_hint').replace('{cap}', u) : t('org_table_ulb_off');
+
+  var pageSize = state.orgPageSize || 20;
+  var totalPages = Math.max(1, Math.ceil(orgs.length / pageSize));
+  if (state.orgPage > totalPages) state.orgPage = totalPages;
+  if (state.orgPage < 1) state.orgPage = 1;
+  var start = (state.orgPage - 1) * pageSize;
+  var slice = orgs.slice(start, start + pageSize);
+
+  var tb = qs('#orgTable tbody');
+  tb.innerHTML = '';
+  slice.forEach(function(o){
+    var ulb = byOrgUlb[o.org] || {impacted: 0, blocked: 0};
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td class="mono">' + o.rank + '</td>' +
+      '<td>' + escHtml(o.org) + '</td>' +
+      '<td class="num mono">' + fmtDollar(o.spend) + '</td>' +
+      '<td class="num mono">' + pct(o.spend, s.total) + '</td>' +
+      '<td class="num mono">' + fmtInt(o.users) + '</td>' +
+      '<td class="num mono">' + fmtDollar(o.perUser) + '</td>' +
+      '<td>' + escHtml(o.topUser) + ' <span class="small mono" style="color:var(--mute)">' + fmtDollar(o.topUserSpend) + '</span></td>' +
+      '<td><span class="badge">' + escHtml(o.topFamily) + '</span> <span class="small mono" style="color:var(--mute)">' + (o.topFamilyPct * 100).toFixed(0) + '%</span></td>' +
+      '<td class="num mono">' + (u > 0 ? fmtInt(ulb.impacted) : '--') + '</td>' +
+      '<td class="num mono">' + (u > 0 ? fmtDollar(ulb.blocked) : '--') + '</td>';
+    tb.appendChild(tr);
+  });
+  var metaEl = qs('#orgTableMeta');
+  if (metaEl) {
+    var endIdx = Math.min(start + pageSize, orgs.length);
+    metaEl.textContent = t('showing') + ' ' + (orgs.length === 0 ? 0 : (start + 1)) + '-' + endIdx + ' / ' + orgs.length;
+  }
+  renderOrgPager(totalPages);
+}
+
+function renderOrgPager(totalPages) {
+  var pager = qs('#orgPager');
+  if (!pager) return;
+  if (totalPages <= 1) { pager.innerHTML = ''; return; }
+  var p = state.orgPage;
+  var parts = [];
+  parts.push('<button class="btn btn-secondary btn-sm" data-orgpage="prev"' + (p <= 1 ? ' disabled' : '') + '>&larr; ' + t('page_prev') + '</button>');
+  var maxWin = 7;
+  var startP = Math.max(1, p - 3);
+  var endP = Math.min(totalPages, startP + maxWin - 1);
+  startP = Math.max(1, endP - maxWin + 1);
+  if (startP > 1) {
+    parts.push('<button class="btn btn-secondary btn-sm" data-orgpage="1">1</button>');
+    if (startP > 2) parts.push('<span class="small mono" style="color:var(--mute)">...</span>');
+  }
+  for (var i = startP; i <= endP; i++) {
+    var cls = i === p ? 'btn-primary' : 'btn-secondary';
+    parts.push('<button class="btn ' + cls + ' btn-sm" data-orgpage="' + i + '">' + i + '</button>');
+  }
+  if (endP < totalPages) {
+    if (endP < totalPages - 1) parts.push('<span class="small mono" style="color:var(--mute)">...</span>');
+    parts.push('<button class="btn btn-secondary btn-sm" data-orgpage="' + totalPages + '">' + totalPages + '</button>');
+  }
+  parts.push('<span class="small mono" style="margin-left:8px;color:var(--mute)">' + t('page_of').replace('{p}', p).replace('{n}', totalPages) + '</span>');
+  pager.innerHTML = parts.join('');
+}
+
+function exportOrgCSV() {
+  if (!state.stats) return;
+  var s = state.stats;
+  var u = state.ulb;
+  var byOrgUlb = {};
+  s.userArr.forEach(function(x){
+    var o = x.org || 'unknown';
+    if (!byOrgUlb[o]) byOrgUlb[o] = {impacted: 0, blocked: 0};
+    if (u > 0 && x.aic > u) {
+      byOrgUlb[o].impacted++;
+      byOrgUlb[o].blocked += (x.aic - u);
+    }
+  });
+  var headers = ['rank','org','spend','pct_total','users','per_user','top_user','top_user_spend','top_family','top_family_pct','ulb_cap','ulb_impacted','ulb_blocked'];
+  var lines = [headers.join(',')];
+  s.orgArr.forEach(function(o){
+    var ulb = byOrgUlb[o.org] || {impacted: 0, blocked: 0};
+    var pctTotal = s.total > 0 ? (o.spend / s.total * 100).toFixed(2) : '0';
+    var row = [
+      o.rank,
+      '"' + String(o.org).replace(/"/g,'""') + '"',
+      o.spend.toFixed(2),
+      pctTotal,
+      o.users,
+      o.perUser.toFixed(2),
+      '"' + String(o.topUser).replace(/"/g,'""') + '"',
+      o.topUserSpend.toFixed(2),
+      '"' + String(o.topFamily).replace(/"/g,'""') + '"',
+      (o.topFamilyPct * 100).toFixed(2),
+      u,
+      ulb.impacted,
+      ulb.blocked.toFixed(2)
+    ];
+    lines.push(row.join(','));
+  });
+  var blob = new Blob([lines.join('\n')], {type: 'text/csv'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'org-leaderboard.csv';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
 /* ---- User table ---- */
@@ -1749,6 +2139,18 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('overFilter').addEventListener('change', function(e) { state.filters.over = e.target.value; state.userPage = 1; renderUserTable(); });
   document.getElementById('exportUserCsv').addEventListener('click', function() { exportUserCSV(); });
   document.getElementById('exportUlbCsv').addEventListener('click', function() { exportUlbCSV(); });
+  var orgCsv = document.getElementById('exportOrgCsv');
+  if (orgCsv) orgCsv.addEventListener('click', function() { exportOrgCSV(); });
+  var orgPager = document.getElementById('orgPager');
+  if (orgPager) orgPager.addEventListener('click', function(e) {
+    var b = e.target.closest('button[data-orgpage]');
+    if (!b || b.disabled) return;
+    var p = b.dataset.orgpage;
+    if (p === 'prev') state.orgPage = Math.max(1, state.orgPage - 1);
+    else if (p === 'next') state.orgPage = state.orgPage + 1;
+    else state.orgPage = parseInt(p) || 1;
+    updateOrgUlb();
+  });
 
   document.getElementById('userPager').addEventListener('click', function(e) {
     var b = e.target.closest('button[data-page]');
