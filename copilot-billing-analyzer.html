@@ -214,6 +214,20 @@ footer .footer-inner{display:flex;justify-content:space-between;align-items:cent
 
 <div id="results" class="hidden">
 
+  <!-- Billing tiles (mirrors official preview) -->
+  <section class="block" id="billingTilesBlock">
+    <div class="container">
+      <div class="section-head" style="text-align:center;max-width:780px">
+        <span class="eyebrow" data-i18n="bt_eyebrow">Billing simulation</span>
+        <h2 data-i18n="bt_title">Estimated monthly bill.</h2>
+        <p data-i18n="bt_subtitle">Side-by-side projection mirroring the official GitHub Copilot preview.</p>
+      </div>
+      <div class="grid grid-2" id="billingTiles"></div>
+      <p class="small mt-16" id="billingFooter" style="text-align:center;color:var(--body)"></p>
+      <p class="small" id="billingDisclaimer" style="text-align:center;color:var(--mute);max-width:780px;margin:8px auto 0"></p>
+    </div>
+  </section>
+
   <!-- 02 Overview -->
   <section class="block">
     <div class="container">
@@ -694,6 +708,26 @@ var I18N = {
     of: 'of',
     users_filtered: 'users (filtered from',
     total_suffix: 'total).',
+    bt_eyebrow: 'Billing simulation',
+    bt_title: 'Estimated monthly bill.',
+    bt_subtitle: 'Side-by-side projection mirroring the official GitHub Copilot preview.',
+    bt_pru_title: 'CURRENT BILLING (PRUs)',
+    bt_aic_title: 'USAGE-BASED BILLING (AICs)',
+    bt_unit_prus: 'PRUs',
+    bt_unit_aics: 'AICs',
+    bt_consumed_prus: 'Consumed PRUs',
+    bt_included_prus: 'Included PRUs',
+    bt_overages: 'Overages',
+    bt_consumed_aics: 'Consumed AICs',
+    bt_included_aics: 'Included AICs',
+    bt_additional_usage: 'Additional usage',
+    bt_license_cost: 'License cost',
+    bt_total_pru: 'Total (license + overages)',
+    bt_total_ubb: 'Total (license + additional usage)',
+    bt_footer: 'This report contains activity for {biz} Copilot Business and {ent} Copilot Enterprise users.',
+    bt_disclaimer_basic: 'All values are provided without any additional negotiated discounts applied.',
+    bt_promo_note: 'Promotional amounts are used in this simulation.',
+    bt_disclaimer_full: 'Estimated projection for illustrative purposes. Consumed values are computed from the uploaded CSV (preview data pipeline) and may differ from amounts emitted by the GitHub billing platform.',
     lang_btn: 'ZH-TW'
   },
   zh: {
@@ -831,6 +865,26 @@ var I18N = {
     of: '/',
     users_filtered: '\u4F4D\u4F7F\u7528\u8005\uFF08\u5F9E',
     total_suffix: '\u4F4D\u4E2D\u7BE9\u9078\uFF09\u3002',
+    bt_eyebrow: '\u8A08\u8CBB\u6A21\u64EC',
+    bt_title: '\u9810\u4F30\u6BCF\u6708\u5E33\u55AE\u3002',
+    bt_subtitle: '\u8207\u5B98\u65B9 GitHub Copilot Billing Preview \u4E00\u81F4\u7684\u96D9\u8EFD\u4F30\u7B97\u3002',
+    bt_pru_title: '\u73FE\u884C\u8A08\u8CBB\uFF08PRUs\uFF09',
+    bt_aic_title: '\u4F7F\u7528\u91CF\u8A08\u8CBB\uFF08AICs\uFF09',
+    bt_unit_prus: 'PRUs',
+    bt_unit_aics: 'AICs',
+    bt_consumed_prus: '\u5DF2\u6D88\u8017 PRUs',
+    bt_included_prus: '\u5305\u542B PRUs',
+    bt_overages: '\u8D85\u984D\u90E8\u5206',
+    bt_consumed_aics: '\u5DF2\u6D88\u8017 AICs',
+    bt_included_aics: '\u5305\u542B AICs',
+    bt_additional_usage: '\u984D\u5916\u4F7F\u7528',
+    bt_license_cost: '\u6388\u6B0A\u8CBB\u7528',
+    bt_total_pru: '\u7E3D\u8A08\uFF08\u6388\u6B0A + \u8D85\u984D\uFF09',
+    bt_total_ubb: '\u7E3D\u8A08\uFF08\u6388\u6B0A + \u984D\u5916\u4F7F\u7528\uFF09',
+    bt_footer: '\u672C\u5831\u544A\u5305\u542B {biz} \u4F4D Copilot Business \u8207 {ent} \u4F4D Copilot Enterprise \u4F7F\u7528\u8005\u7684\u6D3B\u52D5\u3002',
+    bt_disclaimer_basic: '\u6240\u6709\u6578\u503C\u672A\u5305\u542B\u4EFB\u4F55\u7E54\u5916\u8AC7\u5224\u7684\u984D\u5916\u6298\u6263\u3002',
+    bt_promo_note: '\u672C\u6A21\u64EC\u5DF2\u5957\u7528\u4FC3\u92B7\u671F\u91D1\u984D\u3002',
+    bt_disclaimer_full: '\u4F30\u7B97\u50C5\u4F9B\u53C3\u8003\u3002\u5DF2\u6D88\u8017\u91D1\u984D\u662F\u5F9E\u4E0A\u50B3\u7684 CSV\uFF08preview \u8CC7\u6599\u7BA1\u9053\uFF09\u8A08\u7B97\u800C\u4F86\uFF0C\u53EF\u80FD\u8207 GitHub \u5B98\u65B9 billing platform \u767C\u51FA\u7684\u91D1\u984D\u4E0D\u4E00\u81F4\u3002',
     lang_btn: 'EN'
   }
 };
@@ -1145,6 +1199,17 @@ function analyze(rows, headers) {
   var cUser  = pickCol(headers, ['username','User','Login','user','login']);
   var cCost  = pickCol(headers, ['aic_gross_amount','net_amount','gross_amount','Cost ($)','Cost','Amount']);
   var cQty   = pickCol(headers, ['aic_quantity','Quantity','quantity']);
+  // PRU quantity lives in a separate 'quantity' column in the UBB CSV.
+  // Avoid colliding with 'aic_quantity' which is the AIC count, not the PRU count.
+  var cPruQty = pickCol(headers, ['quantity']);
+  if (cPruQty === cQty) cPruQty = null; // older CSVs without a distinct PRU column
+  // Direct PRU billing fields. The official tile reads these verbatim:
+  //   gross_amount   = consumed PRU $
+  //   discount_amount = included PRU $ (the quota discount applied row-by-row)
+  //   net_amount     = overages PRU $ (= gross - discount)
+  var cPruGross    = pickCol(headers, ['gross_amount']);
+  var cPruDiscount = pickCol(headers, ['discount_amount']);
+  var cPruNet      = pickCol(headers, ['net_amount']);
   var cModel = pickCol(headers, ['Model','model']);
   var cOrg   = pickCol(headers, ['organization','Owner','Organization','owner']);
   var cDate  = pickCol(headers, ['Usage at','date','Date','Timestamp']);
@@ -1154,15 +1219,20 @@ function analyze(rows, headers) {
   var byUser = {}, byDay = {}, byDayUsers = {}, byModel = {}, byFamily = {}, byOrg = {};
   var byOrgUsers = {}, byOrgFamily = {}, byOrgTopUser = {};
   var total = 0, quotaHits = 0;
+  // Billing-tile accumulators. Read straight from CSV columns so the values
+  // mirror the official GitHub Copilot UBB tile exactly.
+  var billingPruGross = 0, billingPruDiscount = 0, billingPruNet = 0;
+  var billingAicConsumed = 0; // sum aic_gross_amount where exceeds_quota != True (closest CSV proxy to the official Consumed AICs)
   // Unlicensed (total_monthly_quota=0) bucket: tracked separately, excluded from headlines
   // to match GitHub's official Billing Preview behavior.
   var unlicensedUsers = {}, unlicensedTotal = 0, unlicensedRows = 0;
-  var i, r, u, cost, qty, mdl, org, note, day, fam, quotaVal, isLicensedRow;
+  var i, r, u, cost, qty, pruQty, mdl, org, note, day, fam, quotaVal, isLicensedRow, isExceeds;
   for (i = 0; i < rows.length; i++) {
     r = rows[i];
     u = (cUser ? r[cUser] : 'unknown') || 'unknown';
     cost = parseFloat(cCost ? r[cCost] : 0) || 0;
     qty = parseFloat(cQty ? r[cQty] : 0) || 0;
+    pruQty = parseFloat(cPruQty ? r[cPruQty] : 0) || 0;
     mdl = (cModel ? r[cModel] : 'unknown') || 'unknown';
     org = (cOrg ? r[cOrg] : 'unknown') || 'unknown';
     note = (cNote ? r[cNote] : '') || '';
@@ -1183,12 +1253,25 @@ function analyze(rows, headers) {
       unlicensedUsers[u] = 1;
       unlicensedTotal += cost;
       unlicensedRows++;
+      // AICs from unlicensed rows that are NOT exceeds-quota still count toward
+      // the official Consumed AICs figure.
+      isExceeds = /^(true|1|yes)$/i.test(String(note).trim());
+      if (!isExceeds) billingAicConsumed += cost;
       continue;
     }
 
-    if (!byUser[u]) byUser[u] = {user:u, org:org, aic:0, pru:0};
+    // Accumulate PRU billing components directly from CSV (matches the
+    // official tile exactly).
+    if (cPruGross)    billingPruGross    += parseFloat(r[cPruGross])    || 0;
+    if (cPruDiscount) billingPruDiscount += parseFloat(r[cPruDiscount]) || 0;
+    if (cPruNet)      billingPruNet      += parseFloat(r[cPruNet])      || 0;
+    isExceeds = /^(true|1|yes)$/i.test(String(note).trim());
+    if (!isExceeds) billingAicConsumed += cost;
+
+    if (!byUser[u]) byUser[u] = {user:u, org:org, aic:0, pru:0, quota:0};
     byUser[u].aic += cost;
-    byUser[u].pru += qty;
+    byUser[u].pru += pruQty;
+    if (cQuota && !isNaN(quotaVal) && quotaVal > byUser[u].quota) byUser[u].quota = quotaVal;
     if (!byUser[u].org || byUser[u].org === 'unknown') byUser[u].org = org;
     if (day) {
       byDay[day] = (byDay[day] || 0) + cost;
@@ -1246,6 +1329,64 @@ function analyze(rows, headers) {
   orgArr.sort(function(a, b){ return b.spend - a.spend; });
   orgArr.forEach(function(x, idx){ x.rank = idx + 1; });
 
+  // Billing tile computation (mirrors GitHub Copilot UBB preview).
+  // PRU pricing: $0.04/PRU. AIC pricing: $0.01/AIC.
+  // License: Business ($19, quota=300 PRUs, 3000 AICs), Enterprise ($39, quota=1000 PRUs, 7000 AICs).
+  //
+  // PRU breakdown is read DIRECTLY from CSV columns when available:
+  //   Consumed PRUs $ = sum(gross_amount)
+  //   Included PRUs $ = sum(discount_amount)   <-- official tile reads this verbatim
+  //   Overages    $   = sum(net_amount)        <-- official tile reads this verbatim
+  // This avoids reconstructing per-user min(pru, quota) which doesn't match
+  // when users have multiple quota values during the period (seat changes).
+  //
+  // AIC consumed uses sum(aic_gross_amount) where exceeds_quota != True, which
+  // is the closest CSV-derived proxy to the official Consumed AICs figure.
+  // The included AIC pool is shared across all seats (Business 3000 + Enterprise 7000).
+  var bizCount = 0, entCount = 0;
+  var consumedPruQty = 0, consumedAicCost = 0, includedPruQty = 0;
+  userArr.forEach(function(uu){
+    consumedPruQty += uu.pru;
+    consumedAicCost += uu.aic;
+    var q = uu.quota || 0;
+    if (q === 1000) entCount++;
+    else if (q > 0) bizCount++; // 300 or any positive non-1000 treated as Business
+    includedPruQty += Math.min(uu.pru, q);
+  });
+  var bizPrice = 19, entPrice = 39;
+  var licenseCost = bizCount * bizPrice + entCount * entPrice;
+
+  // Prefer CSV-direct values; fall back to derived if columns are missing.
+  var hasDirectPru = (cPruGross !== null && cPruDiscount !== null && cPruNet !== null);
+  var consumedPruCost = hasDirectPru ? billingPruGross   : consumedPruQty * 0.04;
+  var includedPruCost = hasDirectPru ? billingPruDiscount : includedPruQty * 0.04;
+  var overagesPruCost = hasDirectPru ? billingPruNet     : Math.max(0, consumedPruCost - includedPruCost);
+  var currentTotal    = licenseCost + overagesPruCost;
+
+  var aicPoolQty = bizCount * 3000 + entCount * 7000;
+  var aicPoolCost = aicPoolQty * 0.01;
+  // Use the exceeds_quota=False proxy when the column exists, otherwise fall back
+  // to per-user licensed sum.
+  var billingAic     = (cNote !== null) ? billingAicConsumed : consumedAicCost;
+  var consumedAicQty = billingAic / 0.01;
+  var includedAicCost = Math.min(billingAic, aicPoolCost);
+  var additionalAicCost = Math.max(0, billingAic - aicPoolCost);
+  var ubbTotal = licenseCost + additionalAicCost;
+
+  var billing = (bizCount + entCount) > 0 ? {
+    bizCount: bizCount, entCount: entCount,
+    licenseCost: licenseCost,
+    consumedPruQty: consumedPruCost / 0.04, consumedPruCost: consumedPruCost,
+    includedPruQty: includedPruCost / 0.04, includedPruCost: includedPruCost,
+    overagesPruCost: overagesPruCost,
+    currentTotal: currentTotal,
+    consumedAicQty: consumedAicQty, consumedAicCost: billingAic,
+    aicPoolQty: aicPoolQty, aicPoolCost: aicPoolCost,
+    includedAicCost: includedAicCost,
+    additionalAicCost: additionalAicCost,
+    ubbTotal: ubbTotal
+  } : null;
+
   return {
     total: total, quotaHits: quotaHits, userCount: userArr.length,
     modelCount: Object.keys(byModel).length,
@@ -1259,6 +1400,7 @@ function analyze(rows, headers) {
       usersOnly: unlicensedOnlyCount,
       detected: !!cQuota
     },
+    billing: billing,
     cols: {cUser:cUser, cCost:cCost, cQty:cQty, cModel:cModel, cOrg:cOrg, cDate:cDate, cNote:cNote, cQuota:cQuota}
   };
 }
@@ -1269,6 +1411,7 @@ function renderAll() {
   qs('#uploadBlock').classList.add('hidden');
   qs('#navUpload').classList.add('hidden');
   qs('#navReset').classList.remove('hidden');
+  renderBillingTiles();
   renderOverview();
   renderOverviewNotes();
   renderCharts();
@@ -1279,6 +1422,80 @@ function renderAll() {
   renderUlb();
   renderOrg();
   window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function renderBillingTiles() {
+  var b = state.stats.billing;
+  var block = qs('#billingTilesBlock');
+  if (!b) { if (block) block.classList.add('hidden'); return; }
+  if (block) block.classList.remove('hidden');
+
+  function fmtQty(n, d) {
+    return n.toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits: d});
+  }
+  function rowHtml(label, value, opts) {
+    opts = opts || {};
+    var labelStyle = 'color:' + (opts.muted ? 'var(--mute)' : 'var(--body)') + ';font-size:14px';
+    var valStyle = 'font-variant-numeric:tabular-nums;font-size:14px;' + (opts.bold ? 'font-weight:700;color:var(--ink);font-size:16px' : '');
+    var rowStyle = 'display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;' +
+      (opts.divider ? 'border-bottom:1px solid var(--hair);' : '') +
+      (opts.topGap ? 'margin-top:4px;' : '');
+    return '<div style="' + rowStyle + '">' +
+      '<span style="' + labelStyle + '">' + label + '</span>' +
+      '<span style="' + valStyle + '">' + value + '</span>' +
+    '</div>';
+  }
+  function tileHtml(opts) {
+    return '<div class="card card-lg elev" style="display:flex;flex-direction:column">' +
+      '<div style="text-align:center;padding-bottom:20px;border-bottom:1px solid var(--hair)">' +
+        '<div class="eyebrow" style="margin-bottom:14px">' + opts.title + '</div>' +
+        '<div style="font-size:44px;font-weight:700;color:' + opts.color + ';letter-spacing:-0.03em;line-height:1.05">' + fmtDollar(opts.total) + '</div>' +
+        '<div style="margin-top:10px;font-size:14px;color:var(--body);font-variant-numeric:tabular-nums">' + opts.qtyLabel + '</div>' +
+        '<div style="margin-top:2px;font-size:12px;color:var(--mute)">' + opts.rate + '</div>' +
+      '</div>' +
+      '<div style="padding-top:8px">' + opts.rows + '</div>' +
+      (opts.footer ? '<p class="small" style="margin:16px 0 0;color:var(--mute);line-height:1.5">' + opts.footer + '</p>' : '') +
+    '</div>';
+  }
+
+  var pruRows =
+    rowHtml(t('bt_consumed_prus'), fmtDollar(b.consumedPruCost)) +
+    rowHtml(t('bt_included_prus'), '&minus;' + fmtDollar(b.includedPruCost), {muted:true, divider:true}) +
+    rowHtml(t('bt_overages'), fmtDollar(b.overagesPruCost), {topGap:true}) +
+    rowHtml(t('bt_license_cost'), fmtDollar(b.licenseCost), {divider:true}) +
+    rowHtml(t('bt_total_pru'), fmtDollar(b.currentTotal), {bold:true});
+
+  var aicRows =
+    rowHtml(t('bt_consumed_aics'), fmtDollar(b.consumedAicCost)) +
+    rowHtml(t('bt_included_aics'), '&minus;' + fmtDollar(b.includedAicCost), {muted:true, divider:true}) +
+    rowHtml(t('bt_additional_usage'), fmtDollar(b.additionalAicCost), {topGap:true}) +
+    rowHtml(t('bt_license_cost'), fmtDollar(b.licenseCost), {divider:true}) +
+    rowHtml(t('bt_total_ubb'), fmtDollar(b.ubbTotal), {bold:true});
+
+  var pruTile = tileHtml({
+    title: t('bt_pru_title'),
+    color: 'var(--ink)',
+    total: b.currentTotal,
+    qtyLabel: fmtQty(b.consumedPruQty, 2) + ' ' + t('bt_unit_prus'),
+    rate: '1 PRU = $0.04',
+    rows: pruRows,
+    footer: t('bt_disclaimer_basic')
+  });
+  var aicTile = tileHtml({
+    title: t('bt_aic_title'),
+    color: '#0a7d3e',
+    total: b.ubbTotal,
+    qtyLabel: fmtQty(b.consumedAicQty, 3) + ' ' + t('bt_unit_aics'),
+    rate: '1 AIC = $0.01',
+    rows: aicRows,
+    footer: t('bt_disclaimer_basic') + ' ' + t('bt_promo_note')
+  });
+  qs('#billingTiles').innerHTML = pruTile + aicTile;
+
+  qs('#billingFooter').innerHTML = t('bt_footer')
+    .replace('{biz}', '<strong>' + fmtInt(b.bizCount) + '</strong>')
+    .replace('{ent}', '<strong>' + fmtInt(b.entCount) + '</strong>');
+  qs('#billingDisclaimer').textContent = t('bt_disclaimer_full');
 }
 
 function renderOverview() {
